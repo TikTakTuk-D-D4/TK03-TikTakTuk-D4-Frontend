@@ -80,14 +80,7 @@ function AppRoutes() {
         }
       />
 
-      <Route
-        path="/orders"
-        element={
-          <ProtectedLayout>
-            <OrderPage />
-          </ProtectedLayout>
-        }
-      />
+      <Route path="/orders" element={<OrderPage />}/>
 
       <Route
         path="/promotions"

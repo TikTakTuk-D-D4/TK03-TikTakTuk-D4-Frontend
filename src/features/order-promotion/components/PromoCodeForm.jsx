@@ -1,13 +1,10 @@
 import React, { useState } from "react";
-import { Input } from "../../../components/ui/layout/Input";
-import { Button } from "../../../components/ui/layout/Button";
-import { Divider } from "../../../components/ui/layout/Divider";
-import { Badge } from "../../../components/ui/layout/Badge";
+import { Input } from "../../../components/ui/Input";
+import { Button } from "../../../components/ui/Button";
+import { Divider } from "../../../components/ui/Divider";
+import { Badge } from "../../../components/ui/Badge";
 
-import {
-  applyPromoCode,
-  formatCurrency,
-} from "../utils/orderUtils";
+import { applyPromoCode, formatCurrency } from "../utils/orderUtils";
 
 import {
   formatPromotionType,
@@ -54,12 +51,25 @@ export default function PromoCodeForm({
   };
 
   return (
-    <div className={`space-y-4 ${className}`}>
-      <div className="space-y-3">
+    <div className={`space-y-4 text-text ${className}`}>
+      <div>
+        <p className="text-[11px] uppercase tracking-[0.5em] text-accent">
+          Promo
+        </p>
+
+        <h3 className="mt-2 font-display text-lg font-semibold text-text">
+          Kode Promo
+        </h3>
+
+        <p className="mt-1 text-sm text-muted">
+          Gunakan kode promo untuk mendapatkan potongan harga.
+        </p>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
         <Input
           id="promo-code"
-          label="Kode Promo"
-          placeholder="Masukkan kode promo"
+          placeholder="Contoh: TIKTAK20"
           value={promoCode}
           onChange={handleChange}
           error={error}
@@ -67,30 +77,31 @@ export default function PromoCodeForm({
 
         <Button
           type="button"
-          variant="outline"
-          fullWidth
+          variant="ghost"
           onClick={handleApplyPromo}
           disabled={!promoCode.trim()}
+          className="border border-line-soft bg-white/[0.03] hover:border-line hover:bg-white/[0.07]"
         >
           Terapkan
         </Button>
-
-        {successMessage && !appliedPromo && (
-          <p className="text-sm text-green-600">{successMessage}</p>
-        )}
       </div>
+
+      {successMessage && appliedPromo && (
+        <p className="text-xs text-ok">{successMessage}</p>
+      )}
 
       {appliedPromo && (
         <>
           <Divider />
 
-          <div className="rounded-2xl border border-line-soft bg-gray-50 p-4">
+          <div className="rounded-[14px] border border-line bg-primary/15 p-4">
             <div className="mb-3 flex items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-text">
                   Promo Digunakan
                 </p>
-                <p className="text-sm text-gray-600">
+
+                <p className="mt-1 font-mono text-xs text-accent">
                   {appliedPromo.promoCode}
                 </p>
               </div>
@@ -100,7 +111,7 @@ export default function PromoCodeForm({
               </Badge>
             </div>
 
-            <div className="space-y-2 text-sm text-gray-700">
+            <div className="space-y-2 text-sm text-muted">
               <div className="flex items-center justify-between">
                 <span>Nilai Diskon</span>
                 <span className="font-medium text-text">
@@ -118,19 +129,10 @@ export default function PromoCodeForm({
                 </span>
               </div>
 
-              {typeof appliedPromo.usageRemaining === "number" && (
-                <div className="flex items-center justify-between">
-                  <span>Sisa Penggunaan</span>
-                  <span className="font-medium text-text">
-                    {appliedPromo.usageRemaining}
-                  </span>
-                </div>
-              )}
-
               {appliedPromo.discountType === "NOMINAL" && (
                 <div className="flex items-center justify-between">
-                  <span>Potongan Maksimal</span>
-                  <span className="font-medium text-green-600">
+                  <span>Potongan</span>
+                  <span className="font-medium text-ok">
                     {formatCurrency(appliedPromo.discountValue)}
                   </span>
                 </div>
@@ -143,6 +145,7 @@ export default function PromoCodeForm({
                 variant="ghost"
                 fullWidth
                 onClick={handleRemovePromo}
+                className="border border-line-soft bg-white/[0.03] text-muted hover:border-danger/40 hover:bg-danger/15 hover:text-danger"
               >
                 Hapus Promo
               </Button>

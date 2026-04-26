@@ -1,7 +1,7 @@
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/layout/Card";
-import { Button } from "../../../components/ui/layout/Button";
-import { Divider } from "../../../components/ui/layout/Divider";
+import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/Card";
+import { Button } from "../../../components/ui/Button";
+import { Divider } from "../../../components/ui/Divider";
 
 export default function DeletePromotionModal({
   isOpen,

@@ -1,5 +1,5 @@
 import React from "react";
-import { Button } from "../../../components/ui/layout/Button";
+import { Button } from "../../../components/ui/Button";
 
 import {
   incrementQuantity,

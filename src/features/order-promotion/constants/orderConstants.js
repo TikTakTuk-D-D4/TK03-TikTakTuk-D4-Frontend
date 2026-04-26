@@ -21,8 +21,8 @@ export const MAX_TICKETS_PER_TRANSACTION = 10;
 export const DEFAULT_SERVICE_FEE = 0; 
 
 export const SEATING_TYPE = {
-  RESERVED: "RESERVED";
-  FREE: "FREE";
+  RESERVED: "RESERVED",
+  FREE: "FREE",
 };
 
 export const ORDER_SORT = {

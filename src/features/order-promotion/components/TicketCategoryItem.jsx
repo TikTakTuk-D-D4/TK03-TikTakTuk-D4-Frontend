@@ -1,8 +1,7 @@
 import React from "react";
-import { Badge } from "../../../components/ui/layout/Badge";
-import { Button } from "../../../components/ui/layout/Button";
+import { Badge } from "../../../components/ui/Badge";
+import { Button } from "../../../components/ui/Button";
 import { formatCurrency } from "../utils/orderUtils";
-import { ds } from "./styles";
 
 export default function TicketCategoryItem({
   category,
@@ -23,20 +22,40 @@ export default function TicketCategoryItem({
     if (!isSoldOut) onSelect?.(category);
   };
 
+  const handleCardKeyDown = (event) => {
+    if (isSoldOut) return;
+
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleSelect();
+    }
+  };
+
   return (
     <div
+      role="button"
+      tabIndex={isSoldOut ? -1 : 0}
+      aria-pressed={selected}
+      onClick={handleSelect}
+      onKeyDown={handleCardKeyDown}
       className={[
         "rounded-[14px] border p-4 transition-all",
-        selected ? ds.selected : "border-line-soft bg-surface-2 hover:border-line",
-        isSoldOut ? "opacity-40" : "",
+        selected
+          ? "border-accent bg-primary/20 text-text shadow-glow"
+          : "border-line-soft bg-surface-2 text-text hover:border-line hover:bg-white/[0.04]",
+        isSoldOut ? "cursor-not-allowed opacity-40" : "cursor-pointer",
         className,
       ].join(" ")}
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h4 className="font-semibold text-text">{category.name}</h4>
+          <h4 className="font-display text-sm font-semibold text-text">
+            {category.name}
+          </h4>
+
           <p className="mt-1 text-xs text-muted">
-            Kuota: {remainingQuota} tiket
+            Sisa kuota:{" "}
+            <span className="font-medium text-text">{remainingQuota}</span>
           </p>
         </div>
 
@@ -45,21 +64,26 @@ export default function TicketCategoryItem({
         </p>
       </div>
 
-      <div className="mt-4 flex items-center justify-between">
-        <Badge variant={isSoldOut ? "danger" : selected ? "primary" : "secondary"}>
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <Badge
+          variant={isSoldOut ? "danger" : selected ? "primary" : "secondary"}
+        >
           {isSoldOut ? "Habis" : selected ? "Dipilih" : "Tersedia"}
         </Badge>
 
         <Button
           type="button"
           size="sm"
-          variant={selected ? "outline" : "primary"}
-          onClick={handleSelect}
+          variant={selected ? "ghost" : "primary"}
+          onClick={(event) => {
+            event.stopPropagation();
+            handleSelect();
+          }}
           disabled={isSoldOut}
         >
-          {selected ? "Terpilih" : "Pilih"}
+          {isSoldOut ? "Penuh" : selected ? "Terpilih" : "Pilih"}
         </Button>
       </div>
     </div>
-  );
+  );  
 }

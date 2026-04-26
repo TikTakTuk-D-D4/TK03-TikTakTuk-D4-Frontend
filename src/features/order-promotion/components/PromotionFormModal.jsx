@@ -4,10 +4,10 @@ import {
   CardHeader,
   CardTitle,
   CardContent,
-} from "../../../components/ui/layout/Card";
-import { Input } from "../../../components/ui/layout/Input";
-import { Button } from "../../../components/ui/layout/Button";
-import { Divider } from "../../../components/ui/layout/Divider";
+} from "../../../components/ui/Card";
+import { Input } from "../../../components/ui/Input";
+import { Button } from "../../../components/ui/Button";
+import { Divider } from "../../../components/ui/Divider";
 
 import {
   validatePromotionForm,

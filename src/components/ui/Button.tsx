@@ -1,7 +1,6 @@
 import React from "react";
-import clsx from "clsx";
 
-type ButtonVariant = "primary" | "secondary" | "outline" | "ghost";
+type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
 
 type ButtonProps = {
@@ -13,7 +12,8 @@ type ButtonProps = {
     className?: string;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>;
 
-const cn = (...classes: Array<string | false | undefined>) => classes.filter(Boolean).join("");
+const cn = (...classes: Array<string | false | undefined>) =>
+  classes.filter(Boolean).join(" ");
 
 const variantStyles: Record<ButtonVariant, string> = {
     primary: "bg-gradient-to-r from-purple-500 to-fuchsia-400 text-white shadow-[0_0_24px_rgba(168,85,247,0.35)] hover:from-purple-400 hover:to-fuchsia-300",
@@ -56,5 +56,4 @@ export const Button: React.FC<ButtonProps> = ({
       </button>
     );
 };
-
 

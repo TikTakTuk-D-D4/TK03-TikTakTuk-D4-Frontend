@@ -1,7 +1,7 @@
 import React from "react";
-import { Button } from "../../../components/ui/layout/Button";
-import { Badge } from "../../../components/ui/layout/Badge";
-import { Divider } from "../../../components/ui/layout/Divider";
+import { Button } from "../../../components/ui/Button";
+import { Badge } from "../../../components/ui/Badge";
+import { Divider } from "../../../components/ui/Divider";
 
 import {
   formatPromotionType,
