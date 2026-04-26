@@ -1,5 +1,4 @@
 import React from "react";
-import clsx from "clsx";
 
 type BadgeVariant = "primary" | "secondary" | "success" | "warning" | "danger";
 
@@ -9,12 +8,15 @@ type BadgeProps = {
   className?: string;
 } & React.HTMLAttributes<HTMLSpanElement>;
 
-const variantStyles: Record<BadgeVariant, string> = {
-  primary: "bg-blue-100 text-blue-700",
-  secondary: "bg-gray-100 text-gray-700",
-  success: "bg-green-100 text-green-700",
-  warning: "bg-yellow-100 text-yellow-700",
-  danger: "bg-red-100 text-red-700",
+const cn = (...classes: Array<string | false | undefined>) =>
+  classes.filter(Boolean).join(" ");
+
+const variants: Record<BadgeVariant, string> = {
+  primary: "border-purple-400/40 bg-purple-500/15 text-purple-200",
+  secondary: "border-white/10 bg-white/5 text-zinc-300",
+  success: "border-emerald-400/40 bg-emerald-500/15 text-emerald-300",
+  warning: "border-yellow-400/40 bg-yellow-500/15 text-yellow-300",
+  danger: "border-red-400/40 bg-red-500/15 text-red-300",
 };
 
 export const Badge: React.FC<BadgeProps> = ({
@@ -25,12 +27,12 @@ export const Badge: React.FC<BadgeProps> = ({
 }) => {
   return (
     <span
-      className={clsx(
-        "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium",
-        variantStyles[variant],
+      {...props}
+      className={cn(
+        "inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium",
+        variants[variant],
         className
       )}
-      {...props}
     >
       {children}
     </span>

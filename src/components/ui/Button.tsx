@@ -10,21 +10,23 @@ type ButtonProps = {
     size?: ButtonSize;
     fullWidth?: boolean;
     loading?: boolean;
+    className?: string;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>;
 
-const baseStyles = "inline-flex items-center justify-center rounded-lg font-medium transition focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed";
+const cn = (...classes: Array<string | false | undefined>) => classes.filter(Boolean).join("");
 
 const variantStyles: Record<ButtonVariant, string> = {
-    primary: "bg-blue-600 text-white hover:bg-blue-700",
-    secondary: "bg-gray-100 text-gray-800 hover:bg-gray-200",
-    outline: "border border-gray-300 text-gray-800 hover:bg-gray-100",
-    ghost: "text-gray-700 hover:bg-gray-100",
+    primary: "bg-gradient-to-r from-purple-500 to-fuchsia-400 text-white shadow-[0_0_24px_rgba(168,85,247,0.35)] hover:from-purple-400 hover:to-fuchsia-300",
+    secondary: "bg-[#221b2b] text-zinc-100 border border-white/10 hover:bg-[#2c2238]",
+    outline: "border border-purple-400/70 bg-transparent text-purple-200 hover:bg-purple-500/15",
+    ghost: "bg-transparent text-zinc-300 hover:bg-white/10",
+    danger: "bg-red-500 text-white hover:bg-red-400",
 };
 
-const sizeStyles: Record<ButtonSize, string> = {
-    sm: "px-3 py-1.5 text-sm",
-    md: "px-4 py-2 text-sm",
-    lg: "px-5 py-3 text-base",
+const sizes: Record<ButtonSize, string> = {
+    sm: "h-9 px-3 text-xs",
+    md: "h-11 px-4 text-sm",
+    lg: "h-12 px-5 text-sm",
 };
 
 export const Button: React.FC<ButtonProps> = ({
@@ -38,15 +40,17 @@ export const Button: React.FC<ButtonProps> = ({
     ...props 
 }) => {
     return (
-      <button className={clsx(
-        baseStyles,
-        variantStyles[variant],
-        sizeStyles[size],
-        fullWidth && "w-full",
-        className
-      )}
-      disabled = {disabled || loading}
-      {...props}
+      <button
+        {...props}
+        disabled={disabled || loading}
+        className={cn(
+          "inline-flex items-center justify-center rounded-xl font-semibold transition-all duration-200",
+          "disabled:cursor-not-allowed disabled:opacity-50",
+          variantStyles[variant],
+          sizes[size],
+          fullWidth && "w-full",
+          className
+        )}
       >
         {loading ? "Loading..." : children}
       </button>

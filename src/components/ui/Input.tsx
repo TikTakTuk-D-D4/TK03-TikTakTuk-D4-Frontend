@@ -1,5 +1,4 @@
 import React from "react";
-import clsx from "clsx";
 
 type InputProps = {
   label?: string;
@@ -7,6 +6,8 @@ type InputProps = {
   helperText?: string;
   className?: string;
 } & React.InputHTMLAttributes<HTMLInputElement>;
+
+const cn = (...classes: Array<string | false | undefined>) => classes.filter(Boolean).join("");
 
 export const Input: React.FC<InputProps> = ({
   label,
@@ -19,36 +20,28 @@ export const Input: React.FC<InputProps> = ({
   return (
     <div className="w-full">
       {label && (
-        <label htmlFor={id} className="mb-1.5 block text-sm font-medium text-gray-700">
+        <label htmlFor={id} className="mb-2 block text-sm text-zinc-300">
           {label}
         </label>
       )}
 
       <input 
         id={id}
-        className={clsx(
-          "w-full rounded-lg border bg-white px-3 py-2 text-sm text-gray-900 outline-none transition",
+        className={cn(
+          "h-11 w-full rounded-xl border bg-[#] px-4 text-sm text-white outline-none transition",
+          "placeholder:text-zinc-500",
           error 
-            ? "border-red-500 focus:border-red-500"
-            : "border-gray-300 focus:border-blue-500".
-          "placeholder:text-gray-400 disabled:cursor-not-allowed disabled:bg-gray-100",
+            ? "border-red-400 focus:border-red-400"
+            : "border-white/10 focus:border-purple-400",
           className
         )}
-        aria-invalid={!!error}
-        aria-describedby={error ? `${id}-error` : helperText ? `${id}-helper` : undefined}
-        {...props}
       />
       
-      {error ? (
-        <p id={`${id}-error`} className="mt-1 text-sm text-red-500">
-          {error}
-        </p>
-      ) : helperText ? (
-        <p id={`${id}-helper`} className="mt-1 text-sm text-gray-500">
-          {helperText}
-        </p>
-      ) : null}
-
+      {error && <p className="mt-1.5 text-xs text-red-400">{error}</p>}
+      {!error && helperText && (
+        <p className="mt-1.5 text-xs text-zinc-500">{helperText}</p>
+      )}
     </div>
   );
 };
+
