@@ -13,13 +13,8 @@ import TicketPage from "../features/ticket-seat/pages/TicketPage";
 import SeatPage from "../features/ticket-seat/pages/SeatPage";
 import { getCurrentUser } from "../features/auth/services/authService";
 
+
 function ProtectedLayout({ children }) {
-  const user = getCurrentUser();
-
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
   return (
     <>
       <Navbar />
@@ -27,7 +22,6 @@ function ProtectedLayout({ children }) {
     </>
   );
 }
-
 function AppRoutes() {
   return (
     <Routes>

@@ -1,5 +1,26 @@
-@import "tailwindcss";
-
 body {
-  margin: 0;
+  background-color: #111827;
+  color: white;
+  font-family: sans-serif;
+}
+
+.page {
+  padding: 24px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: #1f2937;
+  padding: 16px;
+  border-radius: 12px;
+  transition: 0.2s;
+}
+
+.card:hover {
+  transform: scale(1.03);
 }
