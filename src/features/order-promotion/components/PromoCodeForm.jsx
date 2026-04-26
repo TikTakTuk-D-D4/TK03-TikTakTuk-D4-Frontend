@@ -84,10 +84,10 @@ export default function PromoCodeForm({
         <>
           <Divider />
 
-          <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+          <div className="rounded-2xl border border-line-soft bg-gray-50 p-4">
             <div className="mb-3 flex items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-gray-900">
+                <p className="text-sm font-semibold text-text">
                   Promo Digunakan
                 </p>
                 <p className="text-sm text-gray-600">
@@ -103,7 +103,7 @@ export default function PromoCodeForm({
             <div className="space-y-2 text-sm text-gray-700">
               <div className="flex items-center justify-between">
                 <span>Nilai Diskon</span>
-                <span className="font-medium text-gray-900">
+                <span className="font-medium text-text">
                   {formatPromotionValue(
                     appliedPromo.discountType,
                     appliedPromo.discountValue
@@ -113,7 +113,7 @@ export default function PromoCodeForm({
 
               <div className="flex items-center justify-between">
                 <span>Periode</span>
-                <span className="font-medium text-gray-900">
+                <span className="font-medium text-text">
                   {appliedPromo.startDate} - {appliedPromo.endDate}
                 </span>
               </div>
@@ -121,7 +121,7 @@ export default function PromoCodeForm({
               {typeof appliedPromo.usageRemaining === "number" && (
                 <div className="flex items-center justify-between">
                   <span>Sisa Penggunaan</span>
-                  <span className="font-medium text-gray-900">
+                  <span className="font-medium text-text">
                     {appliedPromo.usageRemaining}
                   </span>
                 </div>

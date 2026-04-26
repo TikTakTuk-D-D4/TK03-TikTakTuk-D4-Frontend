@@ -28,12 +28,12 @@ export default function SeatButton({
       aria-label={`Seat ${seatLabel}`}
       className={clsx(
         "flex h-10 w-10 items-center justify-center rounded-lg border text-sm font-medium transition",
-        selected && "border-blue-600 bg-blue-600 text-white",
+        selected && "border-blue-600 bg-primary-600 text-white",
         !selected &&
           !isUnavailable &&
-          "border-gray-300 bg-white text-gray-800 hover:border-blue-500 hover:text-blue-600",
+          "border-line bg-surface text-gray-800 hover:border-accent hover:text-accent",
         isUnavailable &&
-          "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400",
+          "cursor-not-allowed border-line-soft bg-surface-2 text-gray-400",
         className
       )}
     >

@@ -97,7 +97,7 @@ export default function PromotionFormModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
       onClick={handleOverlayClick}
     >
-      <Card className="w-full max-w-lg rounded-2xl bg-white shadow-xl">
+      <Card className="w-full max-w-lg rounded-2xl bg-surface shadow-xl">
         <CardHeader>
           <CardTitle>
             {mode === "create" ? "Buat Promo" : "Update Promo"}

@@ -37,7 +37,6 @@ export default function QuantitySelector({
     }
 
     const numericValue = Number(rawValue);
-
     if (Number.isNaN(numericValue)) return;
 
     onChange?.(numericValue);
@@ -61,24 +60,32 @@ export default function QuantitySelector({
   const isMaxReached = safeValue >= max;
 
   return (
-    <div className={`w-full space-y-2 ${className}`}>
-      <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-gray-700">{label}</label>
-        <span className="text-xs text-gray-500">
-          Min {min} • Maks {max}
+    <div
+      className={`rounded-[16px] border border-line-soft bg-surface p-5 text-text shadow-soft ${className}`}
+    >
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div>
+          <h3 className="font-semibold text-text">{label}</h3>
+          <p className="mt-1 text-xs text-muted">
+            Maks {max} tiket per transaksi
+          </p>
+        </div>
+
+        <span className="rounded-full border border-line bg-primary/15 px-3 py-1 text-xs text-accent">
+          {min}–{max}
         </span>
       </div>
 
       <div className="flex items-center gap-3">
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="sm"
           onClick={handleDecrease}
           disabled={isMinReached}
-          className="h-10 w-10 rounded-xl p-0"
+          className="h-10 w-10 rounded-[10px] border border-line-soft bg-surface/[0.03] p-0 text-lg text-text hover:border-line hover:bg-surface/[0.07]"
         >
-          -
+          −
         </Button>
 
         <input
@@ -88,30 +95,32 @@ export default function QuantitySelector({
           value={value}
           onChange={handleInputChange}
           onBlur={handleBlur}
-          className={`h-10 w-20 rounded-xl border px-3 text-center text-sm outline-none transition ${
+          className={[
+            "h-10 w-20 rounded-[10px] border bg-surface/[0.02] px-3 text-center text-sm font-semibold text-text outline-none transition",
+            "placeholder:text-muted/45",
             error
-              ? "border-red-500 focus:border-red-500"
-              : "border-gray-300 focus:border-blue-500"
-          }`}
+              ? "border-danger focus:border-danger focus:ring-4 focus:ring-danger/20"
+              : "border-line-soft focus:border-accent focus:ring-4 focus:ring-accent/20",
+          ].join(" ")}
         />
 
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="sm"
           onClick={handleIncrease}
           disabled={isMaxReached}
-          className="h-10 w-10 rounded-xl p-0"
+          className="h-10 w-10 rounded-[10px] border border-line-soft bg-surface/[0.03] p-0 text-lg text-text hover:border-line hover:bg-surface/[0.07]"
         >
           +
         </Button>
       </div>
 
       {helperText && !error && (
-        <p className="text-xs text-gray-500">{helperText}</p>
+        <p className="mt-3 text-xs text-muted">{helperText}</p>
       )}
 
-      {error && <p className="text-xs text-red-500">{error}</p>}
+      {error && <p className="mt-3 text-xs text-danger">{error}</p>}
     </div>
   );
 }

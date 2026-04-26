@@ -27,9 +27,9 @@ export default function DeletePromotionModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
       onClick={handleOverlayClick}
     >
-      <Card className="w-full max-w-md rounded-2xl bg-white shadow-xl">
+      <Card className="w-full max-w-md rounded-2xl bg-surface shadow-xl">
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg font-semibold text-gray-900">
+          <CardTitle className="text-lg font-semibold text-text">
             Hapus Promosi
           </CardTitle>
         </CardHeader>
@@ -43,19 +43,19 @@ export default function DeletePromotionModal({
 
           <div className="rounded-xl bg-gray-50 p-4">
             <div className="mb-2">
-              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">
                 Promotion ID
               </p>
-              <p className="text-sm font-semibold text-gray-900">
+              <p className="text-sm font-semibold text-text">
                 {promotion.promotionId || "-"}
               </p>
             </div>
 
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">
                 Kode Promo
               </p>
-              <p className="text-sm font-semibold text-gray-900">
+              <p className="text-sm font-semibold text-text">
                 {promotion.promoCode || "-"}
               </p>
             </div>

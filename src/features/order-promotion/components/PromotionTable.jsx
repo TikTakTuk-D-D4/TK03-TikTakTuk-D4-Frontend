@@ -30,13 +30,13 @@ export default function PromotionTable({
   if (!promotions.length) {
     return (
       <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-6 text-center">
-        <p className="text-sm text-gray-500">{emptyMessage}</p>
+        <p className="text-sm text-muted">{emptyMessage}</p>
       </div>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-2xl border border-line-soft bg-white shadow-sm">
       <div className="overflow-x-auto">
         <table className="min-w-full border-collapse">
           <thead className="bg-gray-50">
@@ -56,7 +56,7 @@ export default function PromotionTable({
             {promotions.map((promotion, index) => (
               <React.Fragment key={promotion.promotionId}>
                 <tr className="text-sm text-gray-700">
-                  <td className="px-4 py-4 font-semibold text-gray-900">
+                  <td className="px-4 py-4 font-semibold text-text">
                     {promotion.promoCode}
                   </td>
 

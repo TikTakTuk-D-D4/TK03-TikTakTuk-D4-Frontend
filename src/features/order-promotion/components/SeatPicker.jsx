@@ -34,8 +34,8 @@ export default function SeatPicker({
     <div className={`space-y-4 ${className}`}>
       {/* Title */}
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-        <span className="text-xs text-gray-500">
+        <h3 className="text-sm font-semibold text-text">{title}</h3>
+        <span className="text-xs text-muted">
           Pilih maksimal {maxSelection} kursi
         </span>
       </div>
@@ -47,7 +47,7 @@ export default function SeatPicker({
         {rows.map((rowKey) => (
           <div key={rowKey} className="flex items-center gap-3">
             {/* Row Label */}
-            <div className="w-6 text-xs font-medium text-gray-500">
+            <div className="w-6 text-xs font-medium text-muted">
               {rowKey}
             </div>
 
@@ -68,14 +68,14 @@ export default function SeatPicker({
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap items-center gap-4 pt-2 text-xs text-gray-600">
+      <div className="flex flex-wrap items-center gap-4 pt-2 text-xs text-muted">
         <div className="flex items-center gap-1">
-          <div className="h-4 w-4 rounded border border-gray-300 bg-white" />
+          <div className="h-4 w-4 rounded border border-line bg-surface" />
           Tersedia
         </div>
 
         <div className="flex items-center gap-1">
-          <div className="h-4 w-4 rounded bg-blue-600" />
+          <div className="h-4 w-4 rounded bg-primary-600" />
           Dipilih
         </div>
 

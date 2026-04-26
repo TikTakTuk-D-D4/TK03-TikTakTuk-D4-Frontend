@@ -21,6 +21,10 @@
 
   --shadow-glow: 0 0 0 1px rgba(199,125,255,0.2), 0 14px 34px rgba(155,93,229,0.34);
   --shadow-soft: 0 8px 24px rgba(0,0,0,0.36);
+
+  --font-display: "Unbounded", sans-serif;
+  --font-body: "Outfit", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
 }
 
 body {

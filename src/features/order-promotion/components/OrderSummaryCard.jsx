@@ -31,7 +31,7 @@ export default function OrderSummaryCard({
   return (
     <Card className="w-full rounded-2xl shadow-sm">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold text-gray-900">
+        <CardTitle className="text-lg font-semibold text-text">
           Ringkasan Pesanan
         </CardTitle>
       </CardHeader>
@@ -44,7 +44,7 @@ export default function OrderSummaryCard({
           <span className="text-gray-600">
             Harga x {quantity}
           </span>
-          <span className="font-medium text-gray-900">
+          <span className="font-medium text-text">
             {formatCurrency(subtotal)}
           </span>
         </div>
@@ -53,7 +53,7 @@ export default function OrderSummaryCard({
         {serviceFee > 0 && (
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-600">Biaya Layanan</span>
-            <span className="font-medium text-gray-900">
+            <span className="font-medium text-text">
               {formatCurrency(serviceFee)}
             </span>
           </div>
@@ -73,10 +73,10 @@ export default function OrderSummaryCard({
 
         {/* Total */}
         <div className="flex items-center justify-between">
-          <span className="text-base font-semibold text-gray-900">
+          <span className="text-base font-semibold text-text">
             Total
           </span>
-          <span className="text-base font-bold text-gray-900">
+          <span className="text-base font-bold text-text">
             {formatCurrency(total)}
           </span>
         </div>

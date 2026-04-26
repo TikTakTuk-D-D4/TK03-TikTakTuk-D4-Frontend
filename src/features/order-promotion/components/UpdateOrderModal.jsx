@@ -56,9 +56,9 @@ export default function UpdateOrderModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
       onClick={handleOverlayClick}
     >
-      <Card className="w-full max-w-lg rounded-2xl bg-white shadow-xl">
+      <Card className="w-full max-w-lg rounded-2xl bg-surface shadow-xl">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold text-gray-900">
+          <CardTitle className="text-lg font-semibold text-text">
             Update Order
           </CardTitle>
         </CardHeader>
@@ -68,44 +68,44 @@ export default function UpdateOrderModal({
         <CardContent className="space-y-5 pt-4">
           <div className="rounded-2xl bg-gray-50 p-4 space-y-3">
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">
                 Order ID
               </p>
-              <p className="text-sm font-semibold text-gray-900">
+              <p className="text-sm font-semibold text-text">
                 {order.id || "-"}
               </p>
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted">
                   Customer
                 </p>
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-text">
                   {order.customerName || "-"}
                 </p>
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted">
                   Event
                 </p>
-                <p className="text-sm text-gray-900">
+                <p className="text-sm text-text">
                   {order.eventTitle || "-"}
                 </p>
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted">
                   Total Amount
                 </p>
-                <p className="text-sm font-semibold text-gray-900">
+                <p className="text-sm font-semibold text-text">
                   {formatCurrency(order.totalAmount)}
                 </p>
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted">
                   Status Saat Ini
                 </p>
                 <div className="mt-1">
@@ -125,7 +125,7 @@ export default function UpdateOrderModal({
             <select
               value={paymentStatus}
               onChange={(e) => setPaymentStatus(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-text outline-none transition focus:border-blue-500"
             >
               {PAYMENT_STATUS_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
