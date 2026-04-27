@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import Navbar from "../components/layout/Navbar";
+import AppShell from "../components/layout/AppShell";
 import LoginPage from "../features/auth/pages/LoginPage";
 import RegisterPage from "../features/auth/pages/RegisterPage";
 import DashboardPage from "../features/dashboard/pages/DashboardPage";
@@ -13,6 +13,21 @@ import TicketPage from "../features/ticket-seat/pages/TicketPage";
 import SeatPage from "../features/ticket-seat/pages/SeatPage";
 import { getCurrentUser } from "../features/auth/services/authService";
 
+function StandardLayout({ children }) {
+  const user = getCurrentUser();
+
+  if (user) {
+    return <AppShell>{children}</AppShell>;
+  }
+
+  // Fallback for non-authenticated standard access (if needed)
+  return (
+    <main className="page-container" style={{ padding: "0" }}>
+      {children}
+    </main>
+  );
+}
+
 function ProtectedLayout({ children }) {
   const user = getCurrentUser();
 
@@ -20,12 +35,7 @@ function ProtectedLayout({ children }) {
     return <Navigate to="/login" replace />;
   }
 
-  return (
-    <>
-      <Navbar />
-      <main className="page-container">{children}</main>
-    </>
-  );
+  return <AppShell>{children}</AppShell>;
 }
 
 function AppRoutes() {
@@ -74,9 +84,9 @@ function AppRoutes() {
       <Route
         path="/ticket-categories"
         element={
-          <ProtectedLayout>
+          <StandardLayout>
             <TicketCategoryPage />
-          </ProtectedLayout>
+          </StandardLayout>
         }
       />
 
