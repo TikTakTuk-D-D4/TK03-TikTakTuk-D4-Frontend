@@ -1,79 +1,39 @@
 import { useEffect, useState } from "react";
-import { getVenues } from "../services/venueService";
+import { useNavigate } from "react-router-dom";
+import { getVenues, saveVenues } from "../services/venueService";
 import { isAdminOrOrganizer } from "../../auth/services/authService";
 
 function VenuePage() {
+  const navigate = useNavigate();
+
   const [venues, setVenues] = useState([]);
   const [search, setSearch] = useState("");
   const [cityFilter, setCityFilter] = useState("");
   const [seatingFilter, setSeatingFilter] = useState("");
 
-  const [showModal, setShowModal] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [selectedId, setSelectedId] = useState(null);
-
-  const [form, setForm] = useState({
-    name: "",
-    city: "",
-    address: "",
-    capacity: "",
-    seatingType: "free",
-  });
-
   useEffect(() => {
     setVenues(getVenues());
   }, []);
 
-  // FILTER
   const filtered = venues.filter((v) =>
     v.name.toLowerCase().includes(search.toLowerCase()) &&
     (cityFilter ? v.city === cityFilter : true) &&
     (seatingFilter ? v.seatingType === seatingFilter : true)
   );
 
-  // OPEN CREATE
   const openCreate = () => {
-    setEditMode(false);
-    setForm({
-      name: "",
-      city: "",
-      address: "",
-      capacity: "",
-      seatingType: "free",
-    });
-    setShowModal(true);
+    navigate("/venues/create");
   };
 
-  // OPEN EDIT
   const openEdit = (venue) => {
-    setEditMode(true);
-    setSelectedId(venue.id);
-    setForm(venue);
-    setShowModal(true);
+    navigate(`/venues/edit/${venue.id}`);
   };
 
-  // SAVE (CREATE / UPDATE)
-  const handleSave = () => {
-    if (editMode) {
-      setVenues(
-        venues.map((v) =>
-          v.id === selectedId ? { ...form, id: selectedId } : v
-        )
-      );
-    } else {
-      const newVenue = {
-        ...form,
-        id: Date.now(),
-      };
-      setVenues([...venues, newVenue]);
-    }
-    setShowModal(false);
-  };
-
-  // DELETE
   const handleDelete = (id) => {
     if (confirm("Yakin hapus venue ini?")) {
-      setVenues(venues.filter((v) => v.id !== id));
+      const updated = venues.filter((v) => v.id !== id);
+      setVenues(updated);
+      saveVenues(updated);
     }
   };
 
@@ -81,7 +41,6 @@ function VenuePage() {
     <div className="page">
       <h1 className="text-3xl font-bold mb-4">🏟️ Venue</h1>
 
-      {/* FILTER */}
       <div className="flex gap-3 mb-4 flex-wrap">
         <input
           placeholder="Search venue..."
@@ -114,7 +73,6 @@ function VenuePage() {
         )}
       </div>
 
-      {/* LIST */}
       <div className="grid">
         {filtered.map((v) => (
           <div className="card" key={v.id}>
@@ -128,13 +86,13 @@ function VenuePage() {
               <div className="flex gap-2 mt-3">
                 <button
                   onClick={() => openEdit(v)}
-                  className="bg-yellow-500 px-3 py-1 rounded hover:bg-yellow-600"
+                  className="bg-yellow-500 px-3 py-1 rounded"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => handleDelete(v.id)}
-                  className="bg-red-500 px-3 py-1 rounded hover:bg-red-600"
+                  className="bg-red-500 px-3 py-1 rounded"
                 >
                   Hapus
                 </button>
@@ -143,77 +101,6 @@ function VenuePage() {
           </div>
         ))}
       </div>
-
-      {/* MODAL */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/60 flex justify-center items-center">
-          <div className="bg-gray-900 p-6 rounded-xl w-96">
-            <h2 className="text-xl mb-4">
-              {editMode ? "Edit Venue" : "Tambah Venue"}
-            </h2>
-
-            <input
-              placeholder="Nama"
-              value={form.name}
-              className="w-full mb-2 p-2 bg-gray-800"
-              onChange={(e) =>
-                setForm({ ...form, name: e.target.value })
-              }
-            />
-
-            <input
-              placeholder="Kota"
-              value={form.city}
-              className="w-full mb-2 p-2 bg-gray-800"
-              onChange={(e) =>
-                setForm({ ...form, city: e.target.value })
-              }
-            />
-
-            <input
-              placeholder="Alamat"
-              value={form.address}
-              className="w-full mb-2 p-2 bg-gray-800"
-              onChange={(e) =>
-                setForm({ ...form, address: e.target.value })
-              }
-            />
-
-            <input
-              type="number"
-              placeholder="Capacity"
-              value={form.capacity}
-              className="w-full mb-2 p-2 bg-gray-800"
-              onChange={(e) =>
-                setForm({ ...form, capacity: e.target.value })
-              }
-            />
-
-            <select
-              value={form.seatingType}
-              className="w-full mb-3 p-2 bg-gray-800"
-              onChange={(e) =>
-                setForm({ ...form, seatingType: e.target.value })
-              }
-            >
-              <option value="free">Free Seating</option>
-              <option value="reserved">Reserved Seating</option>
-            </select>
-
-            <div className="flex justify-end gap-2">
-              <button onClick={() => setShowModal(false)}>
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                className="bg-pink-500 px-4 py-2 rounded hover:bg-pink-600"
-              >
-                {editMode ? "Simpan" : "Tambah"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
