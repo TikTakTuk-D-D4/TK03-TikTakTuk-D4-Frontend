@@ -21,11 +21,25 @@ function ProtectedLayout({ children }) {
   }
 
   return (
-    <>
+    <div className="app-frame">
       <Navbar />
       <main className="page-container">{children}</main>
-    </>
+    </div>
   );
+}
+
+function TicketRedirect() {
+  const user = getCurrentUser();
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (user.role === "customer") {
+    return <Navigate to="/my-tickets" replace />;
+  }
+
+  return <Navigate to="/manage-tickets" replace />;
 }
 
 function AppRoutes() {
@@ -100,6 +114,24 @@ function AppRoutes() {
 
       <Route
         path="/tickets"
+        element={
+          <ProtectedLayout>
+            <TicketRedirect />
+          </ProtectedLayout>
+        }
+      />
+
+      <Route
+        path="/manage-tickets"
+        element={
+          <ProtectedLayout>
+            <TicketPage />
+          </ProtectedLayout>
+        }
+      />
+
+      <Route
+        path="/my-tickets"
         element={
           <ProtectedLayout>
             <TicketPage />

@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { getCurrentUser, logout } from "../../features/auth/services/authService";
 import { navByRole } from "../../lib/roleConfig";
 
@@ -12,27 +12,39 @@ function Navbar() {
 
   const handleLogout = () => {
     logout();
-    navigate("/");
+    navigate("/login");
   };
 
   return (
     <nav className="navbar">
       <div className="navbar-brand">
-        <strong>TikTakTuk</strong>
-        <span className="role-badge">{user.role}</span>
+        <div className="brand-mark">TT</div>
+        <div>
+          <strong>TikTakTuk</strong>
+          <span className="role-badge">{user.role}</span>
+        </div>
       </div>
 
       <div className="navbar-links">
         {menus.map((menu) => (
-          <Link key={menu.path} to={menu.path}>
+          <NavLink
+            key={menu.path}
+            to={menu.path}
+            className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}
+          >
             {menu.label}
-          </Link>
+          </NavLink>
         ))}
       </div>
 
-      <button className="btn btn-danger" onClick={handleLogout}>
-        Logout
-      </button>
+      <div className="navbar-user">
+        <div className="user-chip">
+          <span>{user.name || user.username}</span>
+        </div>
+        <button className="btn btn-danger btn-sm" onClick={handleLogout} type="button">
+          Logout
+        </button>
+      </div>
     </nav>
   );
 }

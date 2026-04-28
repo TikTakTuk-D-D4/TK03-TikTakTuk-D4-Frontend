@@ -1,4 +1,17 @@
 export const seats = [
-  { id: 'sea-1', venueId: 'ven-1', row: 'A', number: 1, available: false },
-  { id: 'sea-4', venueId: 'ven-2', row: 'B', number: 4, available: true },
-]
+  { seat_id: "sea-001", id: "sea-001", venue_id: "ven-001", venueId: "ven-001", section: "VIP", row_number: "A", row: "A", seat_number: "1", number: "1" },
+  { seat_id: "sea-002", id: "sea-002", venue_id: "ven-001", venueId: "ven-001", section: "VIP", row_number: "A", row: "A", seat_number: "2", number: "2" },
+  { seat_id: "sea-003", id: "sea-003", venue_id: "ven-001", venueId: "ven-001", section: "VIP", row_number: "A", row: "A", seat_number: "3", number: "3" },
+  { seat_id: "sea-004", id: "sea-004", venue_id: "ven-001", venueId: "ven-001", section: "VIP", row_number: "B", row: "B", seat_number: "1", number: "1" },
+  { seat_id: "sea-005", id: "sea-005", venue_id: "ven-001", venueId: "ven-001", section: "VIP", row_number: "B", row: "B", seat_number: "2", number: "2" },
+  { seat_id: "sea-006", id: "sea-006", venue_id: "ven-001", venueId: "ven-001", section: "Category 1", row_number: "C", row: "C", seat_number: "1", number: "1" },
+  { seat_id: "sea-007", id: "sea-007", venue_id: "ven-001", venueId: "ven-001", section: "Category 1", row_number: "C", row: "C", seat_number: "2", number: "2" },
+  { seat_id: "sea-008", id: "sea-008", venue_id: "ven-001", venueId: "ven-001", section: "Category 1", row_number: "C", row: "C", seat_number: "3", number: "3" },
+  { seat_id: "sea-009", id: "sea-009", venue_id: "ven-001", venueId: "ven-001", section: "Category 1", row_number: "D", row: "D", seat_number: "1", number: "1" },
+  { seat_id: "sea-010", id: "sea-010", venue_id: "ven-001", venueId: "ven-001", section: "Category 1", row_number: "D", row: "D", seat_number: "2", number: "2" },
+  { seat_id: "sea-011", id: "sea-011", venue_id: "ven-003", venueId: "ven-003", section: "WVIP", row_number: "A", row: "A", seat_number: "1", number: "1" },
+  { seat_id: "sea-012", id: "sea-012", venue_id: "ven-003", venueId: "ven-003", section: "WVIP", row_number: "A", row: "A", seat_number: "2", number: "2" },
+  { seat_id: "sea-013", id: "sea-013", venue_id: "ven-003", venueId: "ven-003", section: "WVIP", row_number: "B", row: "B", seat_number: "1", number: "1" },
+  { seat_id: "sea-014", id: "sea-014", venue_id: "ven-003", venueId: "ven-003", section: "Regular", row_number: "C", row: "C", seat_number: "1", number: "1" },
+  { seat_id: "sea-015", id: "sea-015", venue_id: "ven-003", venueId: "ven-003", section: "Regular", row_number: "C", row: "C", seat_number: "2", number: "2" },
+];
