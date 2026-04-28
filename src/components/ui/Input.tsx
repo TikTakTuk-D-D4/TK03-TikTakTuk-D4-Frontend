@@ -27,12 +27,13 @@ export const Input: React.FC<InputProps> = ({
 
       <input 
         id={id}
+        {...props}
         className={cn(
-          "h-11 w-full rounded-xl border bg-[#] px-4 text-sm text-white outline-none transition",
-          "placeholder:text-zinc-500",
+          "h-11 w-full rounded-[10px] border bg-white/[0.02] px-4 text-sm text-text outline-none transition",
+          "placeholder:text-muted/45",
           error 
-            ? "border-red-400 focus:border-red-400"
-            : "border-white/10 focus:border-purple-400",
+            ? "border-danger focus:border-danger focus:ring-4 focus:ring-danger/20"
+            : "border-line-soft focus:border-accent focus:ring-4 focus:ring-accent/20",
           className
         )}
       />
@@ -44,4 +45,3 @@ export const Input: React.FC<InputProps> = ({
     </div>
   );
 };
-

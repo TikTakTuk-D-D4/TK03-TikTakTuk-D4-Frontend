@@ -13,6 +13,15 @@ import TicketPage from "../features/ticket-seat/pages/TicketPage";
 import SeatPage from "../features/ticket-seat/pages/SeatPage";
 import { getCurrentUser } from "../features/auth/services/authService";
 
+function PageLayout({ children }) {
+  return (
+    <>
+      <Navbar />
+      <main className="page-container">{children}</main>
+    </>
+  );
+}
+
 function ProtectedLayout({ children }) {
   const user = getCurrentUser();
 
@@ -20,12 +29,7 @@ function ProtectedLayout({ children }) {
     return <Navigate to="/login" replace />;
   }
 
-  return (
-    <>
-      <Navbar />
-      <main className="page-container">{children}</main>
-    </>
-  );
+  return <PageLayout>{children}</PageLayout>;
 }
 
 function AppRoutes() {
@@ -80,7 +84,14 @@ function AppRoutes() {
         }
       />
 
-      <Route path="/orders" element={<OrderPage />}/>
+      <Route
+        path="/orders"
+        element={
+          <ProtectedLayout>
+            <OrderPage />
+          </ProtectedLayout>
+        }
+      />
 
       <Route
         path="/promotions"

@@ -1,8 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Card,
-  CardHeader,
-  CardTitle,
   CardContent,
 } from "../../../components/ui/Card";
 import { Input } from "../../../components/ui/Input";
@@ -16,6 +14,28 @@ import {
 
 import { DISCOUNT_TYPE_OPTIONS } from "../constants/promotionConstants";
 
+function createInitialForm(mode, initialData) {
+  if (mode === "update" && initialData) {
+    return {
+      promoCode: initialData.promoCode || "",
+      discountType: initialData.discountType || "PERCENTAGE",
+      discountValue: initialData.discountValue || "",
+      startDate: initialData.startDate || "",
+      endDate: initialData.endDate || "",
+      usageLimit: initialData.usageLimit || "",
+    };
+  }
+
+  return {
+    promoCode: "",
+    discountType: "PERCENTAGE",
+    discountValue: "",
+    startDate: "",
+    endDate: "",
+    usageLimit: "",
+  };
+}
+
 export default function PromotionFormModal({
   isOpen,
   mode = "create", // "create" | "update"
@@ -25,40 +45,8 @@ export default function PromotionFormModal({
   onSubmit,
   isLoading = false,
 }) {
-  const [form, setForm] = useState({
-    promoCode: "",
-    discountType: "PERCENTAGE",
-    discountValue: "",
-    startDate: "",
-    endDate: "",
-    usageLimit: "",
-  });
-
+  const [form, setForm] = useState(() => createInitialForm(mode, initialData));
   const [errors, setErrors] = useState({});
-
-  useEffect(() => {
-    if (mode === "update" && initialData) {
-      setForm({
-        promoCode: initialData.promoCode || "",
-        discountType: initialData.discountType || "PERCENTAGE",
-        discountValue: initialData.discountValue || "",
-        startDate: initialData.startDate || "",
-        endDate: initialData.endDate || "",
-        usageLimit: initialData.usageLimit || "",
-      });
-    } else {
-      setForm({
-        promoCode: "",
-        discountType: "PERCENTAGE",
-        discountValue: "",
-        startDate: "",
-        endDate: "",
-        usageLimit: "",
-      });
-    }
-
-    setErrors({});
-  }, [mode, initialData, isOpen]);
 
   if (!isOpen) return null;
 
@@ -73,6 +61,7 @@ export default function PromotionFormModal({
     const mapped = mapPromotionFormValues({
       ...form,
       promotionId: initialData?.promotionId,
+      usedCount: initialData?.usedCount,
     });
 
     const { isValid, errors: validationErrors } =
@@ -94,61 +83,78 @@ export default function PromotionFormModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 px-4 py-6 backdrop-blur-sm"
       onClick={handleOverlayClick}
     >
-      <Card className="w-full max-w-lg rounded-2xl bg-surface shadow-xl">
-        <CardHeader>
-          <CardTitle>
-            {mode === "create" ? "Buat Promo" : "Update Promo"}
-          </CardTitle>
-        </CardHeader>
+      <Card className="w-full max-w-xl rounded-[18px] border-line bg-[linear-gradient(165deg,rgba(255,255,255,0.03),transparent_35%),var(--color-surface)] text-text shadow-glow">
+        <div className="flex items-start justify-between gap-4 px-6 pt-6">
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.45em] text-accent">
+              {mode === "create" ? "Create Promotion" : "Update Promotion"}
+            </p>
+            <h2 className="mt-3 font-display text-xl font-semibold text-text">
+              {mode === "create" ? "Buat Promo Baru" : "Edit Promo"}
+            </h2>
+            <p className="mt-2 text-sm text-muted">
+              Atur kode promo, periode aktif, dan batas penggunaan.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-10 w-10 place-items-center rounded-[10px] border border-line-soft bg-white/[0.03] text-muted transition hover:border-line hover:bg-white/[0.07] hover:text-text"
+          >
+            x
+          </button>
+        </div>
 
         <Divider />
 
         <CardContent className="space-y-4 pt-4">
-          {/* Promo Code */}
           <Input
             label="Kode Promo"
+            placeholder="CTH. TIKTAK20"
             value={form.promoCode}
             onChange={(e) => handleChange("promoCode", e.target.value)}
             error={errors.promoCode}
+            className="uppercase"
           />
 
-          {/* Discount Type */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-2 block text-sm text-zinc-300">
               Tipe Diskon
             </label>
             <select
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className="h-11 w-full rounded-[10px] border border-line-soft bg-white/[0.02] px-4 text-sm text-text outline-none transition focus:border-accent focus:ring-4 focus:ring-accent/20"
               value={form.discountType}
               onChange={(e) => handleChange("discountType", e.target.value)}
             >
               {DISCOUNT_TYPE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
-                  {opt.label}
+                  {opt.value === "PERCENTAGE" ? "Persentase (%)" : "Nominal"}
                 </option>
               ))}
             </select>
             {errors.discountType && (
-              <p className="mt-1 text-sm text-red-500">
+              <p className="mt-1.5 text-xs text-danger">
                 {errors.discountType}
               </p>
             )}
           </div>
 
-          {/* Discount Value */}
           <Input
             label="Nilai Diskon"
             type="number"
+            placeholder={
+              form.discountType === "PERCENTAGE" ? "cth. 20" : "cth. 50000"
+            }
             value={form.discountValue}
             onChange={(e) => handleChange("discountValue", e.target.value)}
             error={errors.discountValue}
           />
 
-          {/* Dates */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 md:grid-cols-2">
             <Input
               label="Tanggal Mulai"
               type="date"
@@ -166,10 +172,10 @@ export default function PromotionFormModal({
             />
           </div>
 
-          {/* Usage Limit */}
           <Input
             label="Batas Penggunaan"
             type="number"
+            placeholder="1"
             value={form.usageLimit}
             onChange={(e) => handleChange("usageLimit", e.target.value)}
             error={errors.usageLimit}
@@ -177,9 +183,8 @@ export default function PromotionFormModal({
 
           <Divider />
 
-          {/* Actions */}
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={onClose} disabled={isLoading}>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Button variant="ghost" onClick={onClose} disabled={isLoading}>
               Batal
             </Button>
 

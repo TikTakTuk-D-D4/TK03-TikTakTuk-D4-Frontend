@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Card,
   CardHeader,
@@ -24,11 +24,7 @@ export default function UpdateOrderModal({
   onSubmit,
   isLoading = false,
 }) {
-  const [paymentStatus, setPaymentStatus] = useState("");
-
-  useEffect(() => {
-    if (order) setPaymentStatus(order.paymentStatus || "");
-  }, [order]);
+  const [paymentStatus, setPaymentStatus] = useState(order?.paymentStatus || "");
 
   if (!isOpen || !order) return null;
 

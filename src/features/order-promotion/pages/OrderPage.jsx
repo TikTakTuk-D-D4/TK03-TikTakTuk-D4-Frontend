@@ -344,12 +344,15 @@ export default function OrderPage() {
         </section>
       </div>
 
-      <UpdateOrderModal
-        isOpen={isUpdateOpen}
-        order={selectedOrder}
-        onClose={closeUpdateModal}
-        onSubmit={handleUpdateOrder}
-      />
+      {isUpdateOpen && selectedOrder && (
+        <UpdateOrderModal
+          key={selectedOrder.id}
+          isOpen={isUpdateOpen}
+          order={selectedOrder}
+          onClose={closeUpdateModal}
+          onSubmit={handleUpdateOrder}
+        />
+      )}
 
       {deleteOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
