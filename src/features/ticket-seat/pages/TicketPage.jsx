@@ -54,6 +54,21 @@ function ticketSort(a, b) {
   return new Date(b.order.order_date).getTime() - new Date(a.order.order_date).getTime();
 }
 
+function getStatusLabel(status) {
+  switch (status) {
+    case "active":
+      return "Scan Entry";
+    case "pending":
+      return "Pending Check";
+    case "used":
+      return "Used";
+    case "cancelled":
+      return "Void";
+    default:
+      return "E-Ticket";
+  }
+}
+
 function TicketPage() {
   const snapshot = useSyncExternalStore(subscribeTicketSeatStore, getTicketSeatSnapshot);
   const location = useLocation();
@@ -347,7 +362,20 @@ function TicketPage() {
                       <div className="cat">{ticket.category?.category_name || "-"}</div>
                       <h4>{ticket.event?.title || "Event belum tersedia"}</h4>
                     </div>
-                    <div className="qr-box" aria-hidden="true" />
+                    {isManagementView ? (
+                      <div className="ticket-side-note" aria-hidden="true">
+                        <span className="ticket-side-kicker">E-Ticket</span>
+                        <strong>{ticket.customer?.full_name?.split(" ")[0] || "Guest"}</strong>
+                        <span className="ticket-side-sub">{ticket.seat ? "Reserved Seat" : "Free Seating"}</span>
+                      </div>
+                    ) : (
+                      <div className="ticket-scan-box" aria-hidden="true">
+                        <span className="ticket-scan-kicker">{getStatusLabel(ticket.status)}</span>
+                        <span className="ticket-scan-code mono">
+                          {ticket.ticket_code.slice(-4)}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="ticket-meta">

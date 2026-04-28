@@ -633,17 +633,50 @@ label {
   color: #e8ddff;
 }
 
-.qr-box {
-  width: 70px;
-  height: 70px;
-  border-radius: 10px;
-  border: 1px dashed rgba(255, 255, 255, 0.42);
-  background:
-    conic-gradient(from 45deg at 50% 50%, #fff 0 25%, #1a1a1a 0 50%, #fff 0 75%, #1a1a1a 0 100%),
-    #fff;
-  background-size: 16px 16px;
-  background-position: center;
+.ticket-side-note,
+.ticket-scan-box {
+  width: 92px;
+  min-height: 76px;
+  border-radius: 12px;
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 6px;
+  padding: 10px 8px;
+  text-align: center;
   flex-shrink: 0;
+}
+
+.ticket-side-kicker,
+.ticket-scan-kicker {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+}
+
+.ticket-side-note strong {
+  font-size: 14px;
+  line-height: 1.1;
+}
+
+.ticket-side-sub {
+  font-size: 10px;
+  color: #e8ddff;
+}
+
+.ticket-scan-box {
+  border-color: rgba(199, 125, 255, 0.34);
+  background:
+    linear-gradient(180deg, rgba(199, 125, 255, 0.1), rgba(255, 255, 255, 0.03)),
+    var(--surface);
+}
+
+.ticket-scan-code {
+  font-size: 18px;
+  color: #f2e9ff;
 }
 
 .seat-wrap {
