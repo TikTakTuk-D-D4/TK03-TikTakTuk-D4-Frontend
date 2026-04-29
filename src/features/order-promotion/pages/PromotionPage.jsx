@@ -159,7 +159,7 @@ function PromotionPage() {
 
               <div>
                 <p className="font-mono text-[11px] uppercase tracking-[0.5em] text-accent">
-                  TikTakTuk Design System
+                  TikTakTuk
                 </p>
                 <h1 className="mt-3 font-display text-4xl font-bold leading-tight md:text-5xl">
                   Manajemen{" "}

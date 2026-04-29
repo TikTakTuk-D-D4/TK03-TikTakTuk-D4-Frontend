@@ -6,12 +6,12 @@ import {
 const orderDummyData = {
   currentEvent: {
     eventId: "evt_001",
-    title: "Konser Melodi Senja",
-    organizer: "Fourtwnty",
-    venueName: "Jakarta Convention Center",
+    title: "Konservatif",
+    organizer: "The Adams",
+    venueName: "M Bloc",
     venueCity: "Jakarta",
-    eventDate: "2026-05-15",
-    eventTime: "19:00",
+    eventDate: "2026-04-20",
+    eventTime: "20:00",
     seatingType: SEATING_TYPE.RESERVED,
     image:
       "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=1200&q=80",
@@ -77,8 +77,8 @@ const orderDummyData = {
       orderDate: "2026-05-10T09:15:00",
       paymentStatus: PAYMENT_STATUS.PENDING,
       totalAmount: 500000,
-      customerName: "Budi Santoso",
-      eventTitle: "Konser Melodi Senja",
+      customerName: "King Dimas",
+      eventTitle: "Pastapora",
       itemCount: 2,
     },
     {
@@ -86,8 +86,8 @@ const orderDummyData = {
       orderDate: "2026-05-09T15:40:00",
       paymentStatus: PAYMENT_STATUS.PAID,
       totalAmount: 1500000,
-      customerName: "Siti Rahayu",
-      eventTitle: "Festival Seni Budaya",
+      customerName: "Rusdi",
+      eventTitle: "Ngawi Musikal Loh Ya",
       itemCount: 2,
     },
     {
@@ -96,7 +96,7 @@ const orderDummyData = {
       paymentStatus: PAYMENT_STATUS.CANCELLED,
       totalAmount: 750000,
       customerName: "Andi Wijaya",
-      eventTitle: "Jazz Night Jakarta",
+      eventTitle: "Koch Elah",
       itemCount: 1,
     },
     {
@@ -105,7 +105,7 @@ const orderDummyData = {
       paymentStatus: PAYMENT_STATUS.PAID,
       totalAmount: 450000,
       customerName: "Maya Putri",
-      eventTitle: "Rock Legends Tour",
+      eventTitle: "Sinkron Fest",
       itemCount: 1,
     },
   ],
