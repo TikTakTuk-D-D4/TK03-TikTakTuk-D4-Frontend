@@ -18,7 +18,10 @@ function EventPage() {
 
   const filteredEvents = events.filter(
     (event) =>
-      event.title.toLowerCase().includes(search.toLowerCase()) &&
+      (
+        (event.title || "").toLowerCase().includes(search.toLowerCase()) ||
+        (event.artist || "").toLowerCase().includes(search.toLowerCase())
+      ) &&
       (venueFilter ? event.venueId === Number(venueFilter) : true)
   );
 
