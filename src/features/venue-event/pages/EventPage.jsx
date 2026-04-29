@@ -85,12 +85,14 @@ function EventPage() {
               Rp {(Number(event.price) || 0).toLocaleString("id-ID")}
             </p>
 
-            <button
-              onClick={() => navigate("/orders")}
-              className="bg-green-500 px-4 py-2 rounded mt-2"
-            >
-              Beli Tiket
-            </button>
+            {!isAdminOrOrganizer() && (
+              <button
+                onClick={() => navigate("/orders")}
+                className="bg-green-500 px-4 py-2 rounded mt-2"
+              >
+                Beli Tiket
+              </button>
+            )}
 
             {isAdminOrOrganizer() && (
               <div className="flex gap-2 mt-3">
