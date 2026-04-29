@@ -1,5 +1,5 @@
-import { promotions } from "../../../mocks/promotions";
+import promotionDummyData from "../data/promotionDummyData";
 
 export function getPromotions() {
-  return promotions;
+  return promotionDummyData.map((promotion) => ({ ...promotion }));
 }
