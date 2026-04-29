@@ -1,28 +1,33 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getVenues, saveVenues } from "../services/venueService";
+import { getEvents, saveEvents } from "../services/eventService";
+import { getVenues } from "../services/venueService";
 
-function VenueFormPage() {
+function EventFormPage() {
   const navigate = useNavigate();
   const { id } = useParams();
 
+  const [venues, setVenues] = useState([]);
   const [form, setForm] = useState({
-    name: "",
-    city: "",
-    address: "",
-    capacity: "",
-    seatingType: "free",
+    title: "",
+    date: "",
+    time: "",
+    venueId: "",
+    artist: "",
+    description: "",
+    price: "",
   });
 
   useEffect(() => {
-    if (id) {
-      const venues = getVenues();
-      const selectedVenue = venues.find(
-        (venue) => venue.id === Number(id)
-      );
+    const venueData = getVenues();
+    setVenues(venueData);
 
-      if (selectedVenue) {
-        setForm(selectedVenue);
+    if (id) {
+      const events = getEvents();
+      const selectedEvent = events.find((event) => event.id === Number(id));
+
+      if (selectedEvent) {
+        setForm(selectedEvent);
       }
     }
   }, [id]);
@@ -37,61 +42,84 @@ function VenueFormPage() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const venues = getVenues();
+    const events = getEvents();
+    const selectedVenue = venues.find(
+      (venue) => venue.id === Number(form.venueId)
+    );
 
-    const newVenue = {
+    const newEvent = {
       ...form,
       id: id ? Number(id) : Date.now(),
-      capacity: Number(form.capacity) || 0,
+      venueId: Number(form.venueId),
+      venueName: selectedVenue?.name || "",
+      price: Number(form.price) || 0,
     };
 
-    const updatedVenues = id
-      ? venues.map((venue) =>
-          venue.id === Number(id) ? newVenue : venue
+    const updatedEvents = id
+      ? events.map((event) =>
+          event.id === Number(id) ? newEvent : event
         )
-      : [...venues, newVenue];
+      : [...events, newEvent];
 
-    saveVenues(updatedVenues);
-    navigate("/venues");
+    saveEvents(updatedEvents);
+    navigate("/events");
   };
 
   return (
     <div className="page">
-      <h1>{id ? "Edit Venue" : "Tambah Venue"}</h1>
+      <h1>{id ? "Edit Event" : "Buat Event"}</h1>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <input
-          placeholder="Nama"
-          value={form.name}
-          onChange={(e) => handleChange("name", e.target.value)}
+          placeholder="Judul"
+          value={form.title}
+          onChange={(e) => handleChange("title", e.target.value)}
         />
 
         <input
-          placeholder="Kota"
-          value={form.city}
-          onChange={(e) => handleChange("city", e.target.value)}
+          type="date"
+          value={form.date}
+          onChange={(e) => handleChange("date", e.target.value)}
         />
 
         <input
-          placeholder="Alamat"
-          value={form.address}
-          onChange={(e) => handleChange("address", e.target.value)}
+          type="time"
+          value={form.time}
+          onChange={(e) => handleChange("time", e.target.value)}
+        />
+
+        <select
+          value={form.venueId}
+          onChange={(e) => handleChange("venueId", e.target.value)}
+        >
+          <option value="">Pilih Venue</option>
+          {venues.map((venue) => (
+            <option key={venue.id} value={venue.id}>
+              {venue.name}
+            </option>
+          ))}
+        </select>
+
+        <input
+          placeholder="Artist"
+          value={form.artist}
+          onChange={(e) => handleChange("artist", e.target.value)}
         />
 
         <input
           type="number"
-          placeholder="Capacity"
-          value={form.capacity}
-          onChange={(e) => handleChange("capacity", e.target.value)}
+          placeholder="Harga"
+          value={form.price}
+          onChange={(e) =>
+            handleChange("price", e.target.value.replace(/\D/g, ""))
+          }
         />
 
-        <select
-          value={form.seatingType}
-          onChange={(e) => handleChange("seatingType", e.target.value)}
-        >
-          <option value="free">Free</option>
-          <option value="reserved">Reserved</option>
-        </select>
+        <textarea
+          placeholder="Deskripsi"
+          value={form.description}
+          onChange={(e) => handleChange("description", e.target.value)}
+        />
 
         <button type="submit">Simpan</button>
       </form>
@@ -99,4 +127,4 @@ function VenueFormPage() {
   );
 }
 
-export default VenueFormPage;
+export default EventFormPage;

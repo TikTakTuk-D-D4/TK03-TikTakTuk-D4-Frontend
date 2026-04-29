@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getEvents, saveEvents } from "../services/eventService";
 import { getVenues } from "../services/venueService";
+import { isAdminOrOrganizer } from "../../auth/services/authService";
 
 function EventPage() {
   const navigate = useNavigate();
@@ -58,12 +59,14 @@ function EventPage() {
           ))}
         </select>
 
-        <button
-          onClick={() => navigate("/events/create")}
-          className="bg-pink-500 px-4 py-2 rounded"
-        >
-          + Buat Event
-        </button>
+        {isAdminOrOrganizer() && (
+          <button
+            onClick={() => navigate("/events/create")}
+            className="bg-pink-500 px-4 py-2 rounded"
+          >
+            + Buat Event
+          </button>
+        )}
       </div>
 
       <div className="grid">
@@ -71,6 +74,8 @@ function EventPage() {
           <div className="card" key={event.id}>
             <h3>{event.title}</h3>
             <p>🎶 {event.artist}</p>
+            <p>🎫 {event.ticketCategory}</p>
+            <p>📦 Stock: {event.stock}</p>
             <p>📍 {event.venueName}</p>
             <p>
               📅 {event.date} ⏰ {event.time}
@@ -80,15 +85,24 @@ function EventPage() {
               Rp {(Number(event.price) || 0).toLocaleString("id-ID")}
             </p>
 
-            <div className="flex gap-2 mt-3">
-              <button onClick={() => navigate(`/events/edit/${event.id}`)}>
-                Edit
-              </button>
+            <button
+              onClick={() => navigate("/orders")}
+              className="bg-green-500 px-4 py-2 rounded mt-2"
+            >
+              Beli Tiket
+            </button>
 
-              <button onClick={() => handleDelete(event.id)}>
-                Hapus
-              </button>
-            </div>
+            {isAdminOrOrganizer() && (
+              <div className="flex gap-2 mt-3">
+                <button onClick={() => navigate(`/events/edit/${event.id}`)}>
+                  Edit
+                </button>
+
+                <button onClick={() => handleDelete(event.id)}>
+                  Hapus
+                </button>
+              </div>
+            )}
           </div>
         ))}
       </div>

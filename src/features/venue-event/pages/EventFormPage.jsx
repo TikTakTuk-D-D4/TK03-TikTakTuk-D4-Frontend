@@ -15,6 +15,8 @@ function EventFormPage() {
     venueId: "",
     artist: "",
     description: "",
+    ticketCategory: "Regular",
+    stock: "",
     price: "",
   });
 
@@ -99,6 +101,26 @@ function EventFormPage() {
             </option>
           ))}
         </select>
+
+        <select
+        value={form.ticketCategory}
+        onChange={(e) =>
+          setForm({ ...form, ticketCategory: e.target.value })
+        }
+      >
+        <option value="VIP">VIP</option>
+        <option value="Gold">Gold</option>
+        <option value="Regular">Regular</option>
+      </select>
+
+      <input
+        type="number"
+        placeholder="Stock tiket"
+        value={form.stock}
+        onChange={(e) =>
+          setForm({ ...form, stock: e.target.value })
+        }
+      />
 
         <input
           placeholder="Artist"

@@ -26,6 +26,13 @@ export function getCurrentUser() {
     return null;
   }
 }
+
+// Admin / organizer only
 export function isAdminOrOrganizer() {
-  return true;
+  const user = getCurrentUser();
+
+  return (
+    user?.role === "admin" ||
+    user?.role === "organizer"
+  );
 }
