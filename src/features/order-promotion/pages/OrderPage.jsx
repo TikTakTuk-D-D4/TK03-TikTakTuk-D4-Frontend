@@ -203,11 +203,11 @@ export default function OrderPage() {
         </header>
 
         {role === "CUSTOMER" && (
-          <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-            <div className="space-y-6">
+          <section className="flex flex-col gap-6 xl:flex-row xl:items-start">
+            <div className="min-w-0 flex-1 space-y-6">
               <Card className="border-line-soft bg-surface text-text shadow-soft">
                 <CardContent className="flex items-center gap-4 p-5">
-                  <div className="grid h-14 w-14 place-items-center rounded-[14px] bg-primary text-xl shadow-glow">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[14px] bg-primary text-xl shadow-glow">
                     ♫
                   </div>
 
@@ -235,11 +235,12 @@ export default function OrderPage() {
                 }}
               />
 
-              <div className="grid gap-6 md:grid-cols-2">
+              <div className="flex flex-col gap-6 md:flex-row">
                 <QuantitySelector
                   value={quantity}
                   min={1}
                   max={10}
+                  className="md:flex-1"
                   onChange={(nextQuantity) => {
                     setQuantity(nextQuantity);
                     setSelectedSeatIds((prev) =>
@@ -249,7 +250,7 @@ export default function OrderPage() {
                 />
 
                 {isReservedSeating && (
-                  <Card className="border-line-soft bg-surface text-text shadow-soft">
+                  <Card className="border-line-soft bg-surface text-text shadow-soft md:flex-1">
                     <CardContent className="p-5">
                       <SeatPicker
                         seats={orderDummyData.availableSeats}
@@ -274,7 +275,7 @@ export default function OrderPage() {
               </Card>
             </div>
 
-            <div className="lg:sticky lg:top-6 lg:self-start">
+            <div className="xl:sticky xl:top-6 xl:w-[360px] xl:shrink-0 xl:self-start">
               <OrderSummaryCard
                 price={selectedCategory?.price || 0}
                 quantity={Number(quantity) || 0}
@@ -298,14 +299,27 @@ export default function OrderPage() {
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-4">
-            <StatCard label="Total Order" value={stats.totalOrder} />
-            <StatCard label="Lunas" value={stats.paidOrder} />
-            <StatCard label="Pending" value={stats.pendingOrder} />
+          <div className="flex flex-col gap-4 md:flex-row">
+            <StatCard
+              label="Total Order"
+              value={stats.totalOrder}
+              className="md:flex-1"
+            />
+            <StatCard
+              label="Lunas"
+              value={stats.paidOrder}
+              className="md:flex-1"
+            />
+            <StatCard
+              label="Pending"
+              value={stats.pendingOrder}
+              className="md:flex-1"
+            />
             {role !== "CUSTOMER" && (
               <StatCard
                 label="Total Revenue"
                 value={formatCurrency(stats.totalRevenue)}
+                className="md:flex-1"
               />
             )}
           </div>
@@ -396,9 +410,11 @@ export default function OrderPage() {
   );
 }
 
-function StatCard({ label, value }) {
+function StatCard({ label, value, className = "" }) {
   return (
-    <Card className="relative overflow-hidden border-line-soft bg-surface-2 text-text shadow-soft">
+    <Card
+      className={`relative overflow-hidden border-line-soft bg-surface-2 text-text shadow-soft ${className}`}
+    >
       <CardContent className="p-5">
         <p className="text-[11px] uppercase tracking-[0.6px] text-muted">
           {label}
