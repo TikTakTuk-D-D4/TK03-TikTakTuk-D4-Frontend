@@ -18,41 +18,31 @@ function VenuePage() {
   const filteredVenues = venues.filter(
     (venue) =>
       venue.name.toLowerCase().includes(search.toLowerCase()) &&
-      (cityFilter
-        ? venue.city.toLowerCase().includes(cityFilter.toLowerCase())
-        : true) &&
+      (cityFilter ? venue.city.toLowerCase().includes(cityFilter.toLowerCase()) : true) &&
       (seatingFilter ? venue.seatingType === seatingFilter : true)
   );
 
   const handleDelete = (id) => {
     if (!confirm("Yakin hapus venue ini?")) return;
-
-    const updatedVenues = venues.filter((venue) => venue.id !== id);
-    setVenues(updatedVenues);
-    saveVenues(updatedVenues);
+    const updated = venues.filter((v) => v.id !== id);
+    setVenues(updated);
+    saveVenues(updated);
   };
 
   return (
-    <div className="page">
-      <h1 className="text-3xl font-bold mb-4">🏟️ Venue</h1>
+    <div className="min-h-screen bg-[#0f0f0f] text-white p-6">
+      <h1 className="text-3xl font-bold mb-6">🏟️ Venue</h1>
 
-      <div className="flex gap-3 mb-4 flex-wrap">
-        <input
-          placeholder="Search venue..."
-          className="px-3 py-2 rounded bg-gray-800"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+      <div className="flex gap-3 mb-6 flex-wrap">
+        <input className="input" placeholder="Search venue..."
+          value={search} onChange={(e) => setSearch(e.target.value)}
         />
 
-        <input
-          placeholder="Filter kota"
-          className="px-3 py-2 rounded bg-gray-800"
-          value={cityFilter}
-          onChange={(e) => setCityFilter(e.target.value)}
+        <input className="input" placeholder="Kota"
+          value={cityFilter} onChange={(e) => setCityFilter(e.target.value)}
         />
 
-        <select
-          className="px-3 py-2 rounded bg-gray-800"
+        <select className="input"
           value={seatingFilter}
           onChange={(e) => setSeatingFilter(e.target.value)}
         >
@@ -64,35 +54,28 @@ function VenuePage() {
         {isAdminOrOrganizer() && (
           <button
             onClick={() => navigate("/venues/create")}
-            className="bg-pink-500 px-4 py-2 rounded hover:bg-pink-600"
+            className="bg-pink-500 px-5 py-3 rounded-xl"
           >
             + Tambah Venue
           </button>
         )}
       </div>
 
-      <div className="grid">
-        {filteredVenues.map((venue) => (
-          <div className="card" key={venue.id}>
-            <h3 className="text-pink-400 text-xl">{venue.name}</h3>
-            <p>{venue.city}</p>
-            <p>{venue.address}</p>
-            <p>{venue.capacity} orang</p>
-            <p className="text-gray-400">{venue.seatingType}</p>
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredVenues.map((v) => (
+          <div key={v.id} className="card">
+            <h3 className="text-xl font-bold text-pink-400">{v.name}</h3>
+            <p>{v.city}</p>
+            <p>{v.address}</p>
+            <p>{v.capacity} orang</p>
+            <p className="text-gray-400">{v.seatingType}</p>
 
             {isAdminOrOrganizer() && (
-              <div className="flex gap-2 mt-3">
-                <button
-                  onClick={() => navigate(`/venues/edit/${venue.id}`)}
-                  className="bg-yellow-500 px-3 py-1 rounded"
-                >
+              <div className="flex gap-2 mt-4">
+                <button className="btn" onClick={() => navigate(`/venues/edit/${v.id}`)}>
                   Edit
                 </button>
-
-                <button
-                  onClick={() => handleDelete(venue.id)}
-                  className="bg-red-500 px-3 py-1 rounded"
-                >
+                <button className="btn-danger" onClick={() => handleDelete(v.id)}>
                   Hapus
                 </button>
               </div>
@@ -100,6 +83,33 @@ function VenuePage() {
           </div>
         ))}
       </div>
+
+      <style>{`
+        .input {
+          padding: 12px 14px;
+          border-radius: 12px;
+          background: #1f1f1f;
+          border: 1px solid #2a2a2a;
+        }
+        .card {
+          background: #1a1a1a;
+          padding: 18px;
+          border-radius: 16px;
+          border: 1px solid #2a2a2a;
+        }
+        .btn {
+          flex: 1;
+          padding: 8px;
+          background: #333;
+          border-radius: 10px;
+        }
+        .btn-danger {
+          flex: 1;
+          padding: 8px;
+          background: #ef4444;
+          border-radius: 10px;
+        }
+      `}</style>
     </div>
   );
 }
