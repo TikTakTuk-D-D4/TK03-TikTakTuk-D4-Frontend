@@ -15,26 +15,21 @@ function VenuePage() {
     setVenues(getVenues());
   }, []);
 
-  const filtered = venues.filter((v) =>
-    v.name.toLowerCase().includes(search.toLowerCase()) &&
-    (cityFilter ? v.city === cityFilter : true) &&
-    (seatingFilter ? v.seatingType === seatingFilter : true)
+  const filteredVenues = venues.filter(
+    (venue) =>
+      venue.name.toLowerCase().includes(search.toLowerCase()) &&
+      (cityFilter
+        ? venue.city.toLowerCase().includes(cityFilter.toLowerCase())
+        : true) &&
+      (seatingFilter ? venue.seatingType === seatingFilter : true)
   );
 
-  const openCreate = () => {
-    navigate("/venues/create");
-  };
-
-  const openEdit = (venue) => {
-    navigate(`/venues/edit/${venue.id}`);
-  };
-
   const handleDelete = (id) => {
-    if (confirm("Yakin hapus venue ini?")) {
-      const updated = venues.filter((v) => v.id !== id);
-      setVenues(updated);
-      saveVenues(updated);
-    }
+    if (!confirm("Yakin hapus venue ini?")) return;
+
+    const updatedVenues = venues.filter((venue) => venue.id !== id);
+    setVenues(updatedVenues);
+    saveVenues(updatedVenues);
   };
 
   return (
@@ -45,17 +40,20 @@ function VenuePage() {
         <input
           placeholder="Search venue..."
           className="px-3 py-2 rounded bg-gray-800"
+          value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
 
         <input
           placeholder="Filter kota"
           className="px-3 py-2 rounded bg-gray-800"
+          value={cityFilter}
           onChange={(e) => setCityFilter(e.target.value)}
         />
 
         <select
           className="px-3 py-2 rounded bg-gray-800"
+          value={seatingFilter}
           onChange={(e) => setSeatingFilter(e.target.value)}
         >
           <option value="">All Seating</option>
@@ -65,7 +63,7 @@ function VenuePage() {
 
         {isAdminOrOrganizer() && (
           <button
-            onClick={openCreate}
+            onClick={() => navigate("/venues/create")}
             className="bg-pink-500 px-4 py-2 rounded hover:bg-pink-600"
           >
             + Tambah Venue
@@ -74,24 +72,25 @@ function VenuePage() {
       </div>
 
       <div className="grid">
-        {filtered.map((v) => (
-          <div className="card" key={v.id}>
-            <h3 className="text-pink-400 text-xl">{v.name}</h3>
-            <p>{v.city}</p>
-            <p>{v.address}</p>
-            <p>{v.capacity} orang</p>
-            <p className="text-gray-400">{v.seatingType}</p>
+        {filteredVenues.map((venue) => (
+          <div className="card" key={venue.id}>
+            <h3 className="text-pink-400 text-xl">{venue.name}</h3>
+            <p>{venue.city}</p>
+            <p>{venue.address}</p>
+            <p>{venue.capacity} orang</p>
+            <p className="text-gray-400">{venue.seatingType}</p>
 
             {isAdminOrOrganizer() && (
               <div className="flex gap-2 mt-3">
                 <button
-                  onClick={() => openEdit(v)}
+                  onClick={() => navigate(`/venues/edit/${venue.id}`)}
                   className="bg-yellow-500 px-3 py-1 rounded"
                 >
                   Edit
                 </button>
+
                 <button
-                  onClick={() => handleDelete(v.id)}
+                  onClick={() => handleDelete(venue.id)}
                   className="bg-red-500 px-3 py-1 rounded"
                 >
                   Hapus
