@@ -11,25 +11,31 @@ import OrderPage from "../features/order-promotion/pages/OrderPage";
 import PromotionPage from "../features/order-promotion/pages/PromotionPage";
 import TicketPage from "../features/ticket-seat/pages/TicketPage";
 import SeatPage from "../features/ticket-seat/pages/SeatPage";
+import { getPageUser } from "../features/auth/services/authService";
 
 function PageLayout({ children }) {
   return (
-    <>
+    <div className="app-frame">
       <Navbar />
       <main className="page-container">{children}</main>
-    </>
+    </div>
   );
 }
 
-export function ProtectedLayout({ children }) {
-  // TODO: Add authentication checks here when protected routes are needed.
-  return <PageLayout>{children}</PageLayout>;
+function TicketRedirect() {
+  const user = getPageUser();
+
+  if (user.role === "customer") {
+    return <Navigate to="/my-tickets" replace />;
+  }
+
+  return <Navigate to="/manage-tickets" replace />;
 }
 
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
@@ -98,6 +104,24 @@ function AppRoutes() {
 
       <Route
         path="/tickets"
+        element={
+          <PageLayout>
+            <TicketRedirect />
+          </PageLayout>
+        }
+      />
+
+      <Route
+        path="/manage-tickets"
+        element={
+          <PageLayout>
+            <TicketPage />
+          </PageLayout>
+        }
+      />
+
+      <Route
+        path="/my-tickets"
         element={
           <PageLayout>
             <TicketPage />
