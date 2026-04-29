@@ -1,18 +1,16 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { getCurrentUser, logout } from "../../features/auth/services/authService";
+import { getPageUser, logout } from "../../features/auth/services/authService";
 import { navByRole } from "../../lib/roleConfig";
 
 function Navbar() {
   const navigate = useNavigate();
-  const user = getCurrentUser();
-
-  if (!user) return null;
+  const user = getPageUser();
 
   const menus = navByRole[user.role] || [];
 
   const handleLogout = () => {
     logout();
-    navigate("/login");
+    navigate("/dashboard");
   };
 
   return (

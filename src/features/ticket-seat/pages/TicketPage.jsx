@@ -1,6 +1,6 @@
 import { useRef, useState, useSyncExternalStore } from "react";
 import { useLocation } from "react-router-dom";
-import { getCurrentUser } from "../../auth/services/authService";
+import { getPageUser } from "../../auth/services/authService";
 import {
   AccessDenied,
   EmptyState,
@@ -72,7 +72,7 @@ function getStatusLabel(status) {
 function TicketPage() {
   const snapshot = useSyncExternalStore(subscribeTicketSeatStore, getTicketSeatSnapshot);
   const location = useLocation();
-  const user = getCurrentUser();
+  const user = getPageUser();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [eventFilter, setEventFilter] = useState("all");

@@ -46,3 +46,7 @@ export function getCurrentUser() {
   const raw = localStorage.getItem(STORAGE_KEY);
   return raw ? JSON.parse(raw) : null;
 }
+
+export function getPageUser() {
+  return getCurrentUser() || demoUsers.admin;
+}

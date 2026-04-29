@@ -1,5 +1,5 @@
 import { useRef, useState, useSyncExternalStore } from "react";
-import { getCurrentUser } from "../../auth/services/authService";
+import { getPageUser } from "../../auth/services/authService";
 import {
   AccessDenied,
   EmptyState,
@@ -39,7 +39,7 @@ function sortSeatView(a, b) {
 function SeatPage() {
   useSyncExternalStore(subscribeTicketSeatStore, getTicketSeatSnapshot);
 
-  const user = getCurrentUser();
+  const user = getPageUser();
   const [search, setSearch] = useState("");
   const [venueFilter, setVenueFilter] = useState("all");
   const [selectedSeatId, setSelectedSeatId] = useState("");

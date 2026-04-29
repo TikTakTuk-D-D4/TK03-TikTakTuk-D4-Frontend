@@ -11,15 +11,9 @@ import OrderPage from "../features/order-promotion/pages/OrderPage";
 import PromotionPage from "../features/order-promotion/pages/PromotionPage";
 import TicketPage from "../features/ticket-seat/pages/TicketPage";
 import SeatPage from "../features/ticket-seat/pages/SeatPage";
-import { getCurrentUser } from "../features/auth/services/authService";
+import { getPageUser } from "../features/auth/services/authService";
 
-function ProtectedLayout({ children }) {
-  const user = getCurrentUser();
-
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
+function PageLayout({ children }) {
   return (
     <div className="app-frame">
       <Navbar />
@@ -29,11 +23,7 @@ function ProtectedLayout({ children }) {
 }
 
 function TicketRedirect() {
-  const user = getCurrentUser();
-
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
+  const user = getPageUser();
 
   if (user.role === "customer") {
     return <Navigate to="/my-tickets" replace />;
@@ -45,106 +35,106 @@ function TicketRedirect() {
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
       <Route
         path="/dashboard"
         element={
-          <ProtectedLayout>
+          <PageLayout>
             <DashboardPage />
-          </ProtectedLayout>
+          </PageLayout>
         }
       />
 
       <Route
         path="/venues"
         element={
-          <ProtectedLayout>
+          <PageLayout>
             <VenuePage />
-          </ProtectedLayout>
+          </PageLayout>
         }
       />
 
       <Route
         path="/events"
         element={
-          <ProtectedLayout>
+          <PageLayout>
             <EventPage />
-          </ProtectedLayout>
+          </PageLayout>
         }
       />
 
       <Route
         path="/artists"
         element={
-          <ProtectedLayout>
+          <PageLayout>
             <ArtistPage />
-          </ProtectedLayout>
+          </PageLayout>
         }
       />
 
       <Route
         path="/ticket-categories"
         element={
-          <ProtectedLayout>
+          <PageLayout>
             <TicketCategoryPage />
-          </ProtectedLayout>
+          </PageLayout>
         }
       />
 
       <Route
         path="/orders"
         element={
-          <ProtectedLayout>
+          <PageLayout>
             <OrderPage />
-          </ProtectedLayout>
+          </PageLayout>
         }
       />
 
       <Route
         path="/promotions"
         element={
-          <ProtectedLayout>
+          <PageLayout>
             <PromotionPage />
-          </ProtectedLayout>
+          </PageLayout>
         }
       />
 
       <Route
         path="/tickets"
         element={
-          <ProtectedLayout>
+          <PageLayout>
             <TicketRedirect />
-          </ProtectedLayout>
+          </PageLayout>
         }
       />
 
       <Route
         path="/manage-tickets"
         element={
-          <ProtectedLayout>
+          <PageLayout>
             <TicketPage />
-          </ProtectedLayout>
+          </PageLayout>
         }
       />
 
       <Route
         path="/my-tickets"
         element={
-          <ProtectedLayout>
+          <PageLayout>
             <TicketPage />
-          </ProtectedLayout>
+          </PageLayout>
         }
       />
 
       <Route
         path="/seats"
         element={
-          <ProtectedLayout>
+          <PageLayout>
             <SeatPage />
-          </ProtectedLayout>
+          </PageLayout>
         }
       />
     </Routes>
