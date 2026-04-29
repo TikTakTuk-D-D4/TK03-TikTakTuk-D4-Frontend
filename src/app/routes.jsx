@@ -6,6 +6,7 @@ import RegisterPage from "../features/auth/pages/RegisterPage";
 
 import DashboardPage from "../features/dashboard/pages/DashboardPage";
 import VenuePage from "../features/venue-event/pages/VenuePage";
+import VenueFormPage from "../features/venue-event/pages/VenueFormPage";
 import EventPage from "../features/venue-event/pages/EventPage";
 import EventFormPage from "../features/venue-event/pages/EventFormPage";
 
@@ -35,61 +36,121 @@ function AppRoutes() {
 
       <Route
         path="/dashboard"
-        element={<ProtectedLayout><DashboardPage /></ProtectedLayout>}
+        element={
+          <ProtectedLayout>
+            <DashboardPage />
+          </ProtectedLayout>
+        }
       />
 
       {/* VENUE */}
       <Route
         path="/venues"
-        element={<ProtectedLayout><VenuePage /></ProtectedLayout>}
+        element={
+          <ProtectedLayout>
+            <VenuePage />
+          </ProtectedLayout>
+        }
       />
 
-      {/* EVENTS LIST */}
+      <Route
+        path="/venues/create"
+        element={
+          <ProtectedLayout>
+            <VenueFormPage />
+          </ProtectedLayout>
+        }
+      />
+
+      <Route
+        path="/venues/edit/:id"
+        element={
+          <ProtectedLayout>
+            <VenueFormPage />
+          </ProtectedLayout>
+        }
+      />
+
+      {/* EVENTS */}
       <Route
         path="/events"
-        element={<ProtectedLayout><EventPage /></ProtectedLayout>}
+        element={
+          <ProtectedLayout>
+            <EventPage />
+          </ProtectedLayout>
+        }
       />
 
-      {/* 🔥 CREATE EVENT PAGE BARU */}
       <Route
         path="/events/create"
-        element={<ProtectedLayout><EventFormPage /></ProtectedLayout>}
+        element={
+          <ProtectedLayout>
+            <EventFormPage />
+          </ProtectedLayout>
+        }
       />
 
-      {/* EDIT EVENT PAGE BARU */}
       <Route
         path="/events/edit/:id"
-        element={<ProtectedLayout><EventFormPage /></ProtectedLayout>}
+        element={
+          <ProtectedLayout>
+            <EventFormPage />
+          </ProtectedLayout>
+        }
       />
 
       <Route
         path="/artists"
-        element={<ProtectedLayout><ArtistPage /></ProtectedLayout>}
+        element={
+          <ProtectedLayout>
+            <ArtistPage />
+          </ProtectedLayout>
+        }
       />
 
       <Route
         path="/ticket-categories"
-        element={<ProtectedLayout><TicketCategoryPage /></ProtectedLayout>}
+        element={
+          <ProtectedLayout>
+            <TicketCategoryPage />
+          </ProtectedLayout>
+        }
       />
 
       <Route
         path="/orders"
-        element={<ProtectedLayout><OrderPage /></ProtectedLayout>}
+        element={
+          <ProtectedLayout>
+            <OrderPage />
+          </ProtectedLayout>
+        }
       />
 
       <Route
         path="/promotions"
-        element={<ProtectedLayout><PromotionPage /></ProtectedLayout>}
+        element={
+          <ProtectedLayout>
+            <PromotionPage />
+          </ProtectedLayout>
+        }
       />
 
       <Route
         path="/tickets"
-        element={<ProtectedLayout><TicketPage /></ProtectedLayout>}
+        element={
+          <ProtectedLayout>
+            <TicketPage />
+          </ProtectedLayout>
+        }
       />
 
       <Route
         path="/seats"
-        element={<ProtectedLayout><SeatPage /></ProtectedLayout>}
+        element={
+          <ProtectedLayout>
+            <SeatPage />
+          </ProtectedLayout>
+        }
       />
     </Routes>
   );
