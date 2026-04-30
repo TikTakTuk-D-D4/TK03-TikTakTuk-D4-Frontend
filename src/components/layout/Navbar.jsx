@@ -5,6 +5,7 @@ import { navByRole } from "../../lib/roleConfig";
 function Navbar() {
   const navigate = useNavigate();
   const user = getPageUser();
+  const menus = navByRole[user.role] || [];
 
   const handleLogout = () => {
     logout();
