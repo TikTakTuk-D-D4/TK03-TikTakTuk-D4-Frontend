@@ -1,5 +1,5 @@
-import { tickets } from "../../../mocks/tickets";
+import { getTicketSeatSnapshot } from "./ticketSeatStore";
 
 export function getTickets() {
-  return tickets;
+  return getTicketSeatSnapshot().tickets;
 }

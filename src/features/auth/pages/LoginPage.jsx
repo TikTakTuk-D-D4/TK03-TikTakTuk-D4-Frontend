@@ -1,113 +1,95 @@
 import { useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import { ShieldCheck, Building2, UserRound } from "lucide-react";
-import { Button } from "../../../components/ui/Button";
-import { useAuth } from "../../../context/AuthContext";
-
-const ROLES = [
-  {
-    id: "admin",
-    label: "Admin",
-    helper: "Akses penuh untuk semua modul dan manajemen data.",
-    icon: ShieldCheck,
-  },
-  {
-    id: "organizer",
-    label: "Organizer",
-    helper: "Kelola event sendiri dan kategori tiket sesuai event milikmu.",
-    icon: Building2,
-  },
-  {
-    id: "customer",
-    label: "Customer",
-    helper: "Akses pembacaan data publik dan area customer.",
-    icon: UserRound,
-  },
-];
+import { getCurrentUser, loginAs } from "../services/authService";
 
 function LoginPage() {
   const navigate = useNavigate();
-  const { user, switchRole } = useAuth();
+  const currentUser = getCurrentUser();
   const [role, setRole] = useState("admin");
+  const [error, setError] = useState("");
 
-  if (user) {
+  if (currentUser) {
     return <Navigate to="/dashboard" replace />;
   }
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    switchRole(role);
-    navigate("/dashboard", { replace: true });
+
+    try {
+      loginAs(role);
+      navigate("/dashboard");
+    } catch (submitError) {
+      setError(submitError.message);
+    }
   };
 
   return (
-    <section className="min-h-screen grid place-items-center p-4 sm:p-6 lg:p-8">
-      <div className="w-full max-w-210 rounded-[22px] border border-edge bg-card shadow-card overflow-hidden animate-pop-in">
-        <div className="p-6 sm:p-8 lg:p-10 border-b border-edge bg-brand-gradient text-bg">
-          <p className="uppercase tracking-[0.16em] text-[11px] font-semibold opacity-90 mb-2">
-            TikTakTuk Demo Access
-          </p>
-          <h1 className="font-display text-[42px] sm:text-5xl leading-[1.03] tracking-tight mb-2.5">
-            Login
-          </h1>
-          <p className="text-sm sm:text-[17px] text-bg/90 max-w-140">
-            Pilih role demo untuk masuk ke sistem dan menguji behavior akses modul.
-          </p>
+    <section className="auth-screen">
+      <div className="hero-pane">
+        <div className="brand">
+          <div className="brand-mark">TT</div>
+          <div>
+            <div className="brand-word">TikTakTuk</div>
+            <div className="brand-sub">Concert Ticketing Platform</div>
+          </div>
         </div>
 
-        <form className="p-6 sm:p-8 lg:p-10" onSubmit={handleSubmit}>
-          <div className="grid gap-3">
-            {ROLES.map((item) => {
-              const Icon = item.icon;
-              const active = role === item.id;
+        <div className="hero-copy">
+          <h1>Frontend TK03 untuk alur ticket dan seat.</h1>
+          <p>
+            Pilih role demo untuk menguji akses ke Manajemen Kursi, Manajemen Tiket, dan Tiket Saya
+            tanpa backend.
+          </p>
+          <span className="hero-pill">Dark neon purple design system enabled</span>
+        </div>
 
-              return (
-                <label
-                  key={item.id}
-                  className={[
-                    "flex items-start gap-3 rounded-xl border p-4 transition cursor-pointer",
-                    active
-                      ? "border-primary bg-primary-soft/55 shadow-glow"
-                      : "border-edge hover:border-edge-glow hover:bg-bg-soft/55",
-                  ].join(" ")}
-                >
-                  <input
-                    type="radio"
-                    name="role"
-                    value={item.id}
-                    className="mt-1 accent-primary"
-                    checked={active}
-                    onChange={(event) => setRole(event.target.value)}
-                  />
+        <div className="hero-meta">
+          <div className="meta-card">
+            <b>3</b>
+            <span>Demo roles</span>
+          </div>
+          <div className="meta-card">
+            <b>15</b>
+            <span>Dummy seats</span>
+          </div>
+          <div className="meta-card">
+            <b>5</b>
+            <span>Issued tickets</span>
+          </div>
+        </div>
+      </div>
 
-                  <div className="h-9 w-9 rounded-lg bg-bg-soft border border-edge grid place-items-center text-primary-hover shrink-0">
-                    <Icon size={17} />
-                  </div>
+      <div className="auth-pane">
+        <div className="auth-head">
+          <h2>Login Demo</h2>
+          <p>Masuk cepat untuk memeriksa flow frontend sesuai role.</p>
+        </div>
 
-                  <div>
-                    <p className="font-semibold text-ink">{item.label}</p>
-                    <p className="text-sm text-ink-dim mt-0.5">{item.helper}</p>
-                  </div>
-                </label>
-              );
-            })}
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <div className="role-picker">
+            {["admin", "organizer", "customer"].map((item) => (
+              <button
+                className={`role-opt${role === item ? " active" : ""}`}
+                key={item}
+                type="button"
+                onClick={() => setRole(item)}
+              >
+                <span className="role-icon">{item === "admin" ? "A" : item === "organizer" ? "O" : "C"}</span>
+                <span>{item}</span>
+              </button>
+            ))}
           </div>
 
-          <div className="mt-7 pt-5 border-t border-edge flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <Link className="text-sm text-primary hover:text-primary-hover font-medium" to="/ticket-categories">
-              Lihat Kategori Tiket (Public)
-            </Link>
+          <button className="btn btn-primary" type="submit">
+            Masuk sebagai {role}
+          </button>
 
-            <div className="flex flex-wrap items-center gap-2.5">
-              <Link className="text-sm text-ink-dim hover:text-ink" to="/register">
-                Register
-              </Link>
-              <Button type="submit" variant="primary" className="w-full sm:w-auto">
-                Masuk Sebagai {ROLES.find((item) => item.id === role)?.label}
-              </Button>
-            </div>
-          </div>
+          {error ? <span className="form-error">{error}</span> : null}
         </form>
+
+        <p className="linkline">
+          Belum perlu registrasi untuk TK03. <Link to="/register">Lihat halaman register</Link>.
+        </p>
       </div>
     </section>
   );

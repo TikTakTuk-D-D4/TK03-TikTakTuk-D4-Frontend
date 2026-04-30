@@ -1,7 +1,7 @@
-import { getCurrentUser } from "../../auth/services/authService";
+import { getPageUser } from "../../auth/services/authService";
 
 function DashboardPage() {
-  const user = getCurrentUser();
+  const user = getPageUser();
 
   return (
     <div className="page">
