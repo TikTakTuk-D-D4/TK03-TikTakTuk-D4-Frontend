@@ -8,10 +8,6 @@ function LoginPage() {
   const [role, setRole] = useState("admin");
   const [error, setError] = useState("");
 
-  if (currentUser) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
   const handleSubmit = (event) => {
     event.preventDefault();
 
