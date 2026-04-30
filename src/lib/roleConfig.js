@@ -7,8 +7,8 @@ export const navByRole = {
     { label: "Kategori Tiket", path: "/ticket-categories" },
     { label: "Order", path: "/orders" },
     { label: "Promosi", path: "/promotions" },
-    { label: "Tiket", path: "/tickets" },
-    { label: "Seat", path: "/seats" },
+    { label: "Manajemen Tiket", path: "/manage-tickets" },
+    { label: "Manajemen Kursi", path: "/seats" },
   ],
   organizer: [
     { label: "Dashboard", path: "/dashboard" },
@@ -16,8 +16,8 @@ export const navByRole = {
     { label: "Event", path: "/events" },
     { label: "Kategori Tiket", path: "/ticket-categories" },
     { label: "Order", path: "/orders" },
-    { label: "Tiket", path: "/tickets" },
-    { label: "Seat", path: "/seats" },
+    { label: "Manajemen Tiket", path: "/manage-tickets" },
+    { label: "Manajemen Kursi", path: "/seats" },
   ],
   customer: [
     { label: "Dashboard", path: "/dashboard" },
@@ -26,7 +26,6 @@ export const navByRole = {
     { label: "Artist", path: "/artists" },
     { label: "Promosi", path: "/promotions" },
     { label: "Order", path: "/orders" },
-    { label: "Tiket", path: "/tickets" },
-    { label: "Seat", path: "/seats" },
+    { label: "Tiket Saya", path: "/my-tickets" },
   ],
 };

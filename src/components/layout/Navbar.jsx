@@ -1,17 +1,50 @@
-export default function Navbar() {
-  return (
-    <nav className="bg-gray-900 text-white px-6 py-4 flex justify-between items-center shadow-lg">
-      <h1 className="text-xl font-bold text-pink-500">TikTakTuk 🎵</h1>
+import { NavLink, useNavigate } from "react-router-dom";
+import { getPageUser, logout } from "../../features/auth/services/authService";
+import { navByRole } from "../../lib/roleConfig";
 
-      <div className="flex gap-6">
-        <a href="/dashboard" className="hover:text-pink-400">Dashboard</a>
-        <a href="/venues" className="hover:text-pink-400">Venue</a>
-        <a href="/events" className="hover:text-pink-400">Event</a>
+function Navbar() {
+  const navigate = useNavigate();
+  const user = getPageUser();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/dashboard");
+  };
+
+  return (
+    <nav className="navbar">
+      <div className="navbar-brand">
+        <div className="brand-mark">TT</div>
+        <div>
+          <strong>TikTakTuk</strong>
+          <span className="role-badge">{user.role}</span>
+        </div>
       </div>
 
-      <button className="bg-pink-500 px-4 py-2 rounded-lg hover:bg-pink-600">
-        Logout
-      </button>
+      <div className="navbar-links">
+        {menus.map((menu) => (
+          <NavLink
+            key={menu.path}
+            to={menu.path}
+            className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}
+          >
+            {menu.label}
+          </NavLink>
+        ))}
+      </div>
+
+      <div className="navbar-user">
+        <div className="user-chip">
+          <span>{user.name || user.username}</span>
+        </div>
+        <button className="btn btn-danger btn-sm" onClick={handleLogout} type="button">
+          Logout
+        </button>
+      </div>
     </nav>
   );
 }
+
+export default Navbar;
+
+
