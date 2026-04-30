@@ -28,6 +28,15 @@ function ProtectedLayout({ children }) {
   );
 }
 
+function PageLayout({ children }) {
+  return (
+    <div className="app-frame">
+      <Navbar />
+      <main className="page-container">{children}</main>
+    </div>
+  );
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -38,81 +47,81 @@ function AppRoutes() {
       <Route
         path="/dashboard"
         element={
-          <ProtectedLayout>
+          <PageLayout>
             <DashboardPage />
-          </ProtectedLayout>
+          </PageLayout>
         }
       />
 
       <Route
         path="/venues"
         element={
-          <ProtectedLayout>
+          <PageLayout>
             <VenuePage />
-          </ProtectedLayout>
+          </PageLayout>
         }
       />
 
       <Route
         path="/events"
         element={
-          <ProtectedLayout>
+          <PageLayout>
             <EventPage />
-          </ProtectedLayout>
+          </PageLayout>
         }
       />
 
       <Route
         path="/artists"
         element={
-          <ProtectedLayout>
+          <PageLayout>
             <ArtistPage />
-          </ProtectedLayout>
+          </PageLayout>
         }
       />
 
       <Route
         path="/ticket-categories"
         element={
-          <ProtectedLayout>
+          <PageLayout>
             <TicketCategoryPage />
-          </ProtectedLayout>
+          </PageLayout>
         }
       />
 
       <Route
         path="/orders"
         element={
-          <ProtectedLayout>
+          <PageLayout>
             <OrderPage />
-          </ProtectedLayout>
+          </PageLayout>
         }
       />
 
       <Route
         path="/promotions"
         element={
-          <ProtectedLayout>
+          <PageLayout>
             <PromotionPage />
-          </ProtectedLayout>
+          </PageLayout>
         }
       />
 
       <Route
         path="/tickets"
         element={
-          <ProtectedLayout>
+          <PageLayout>
             <TicketPage />
-          </ProtectedLayout>
+          </PageLayout>
         }
       />
 
       <Route
         path="/seats"
         element={
-          <ProtectedLayout>
+          <PageLayout>
             <SeatPage />
-          </ProtectedLayout>
+          </PageLayout>
         }
       />
     </Routes>
