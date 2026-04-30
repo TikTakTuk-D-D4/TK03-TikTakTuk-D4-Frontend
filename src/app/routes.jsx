@@ -1,10 +1,16 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import Navbar from "../components/layout/Navbar";
+
 import AppShell from "../components/layout/AppShell";
 import LoginPage from "../features/auth/pages/LoginPage";
 import RegisterPage from "../features/auth/pages/RegisterPage";
+
 import DashboardPage from "../features/dashboard/pages/DashboardPage";
 import VenuePage from "../features/venue-event/pages/VenuePage";
+import VenueFormPage from "../features/venue-event/pages/VenueFormPage";
 import EventPage from "../features/venue-event/pages/EventPage";
+import EventFormPage from "../features/venue-event/pages/EventFormPage";
+
 import ArtistPage from "../features/artist-ticket-category/pages/ArtistPage";
 import TicketCategoryPage from "../features/artist-ticket-category/pages/TicketCategoryPage";
 import OrderPage from "../features/order-promotion/pages/OrderPage";
@@ -57,6 +63,7 @@ function AppRoutes() {
         }
       />
 
+      {/* VENUE */}
       <Route
         path="/venues"
         element={
@@ -67,11 +74,48 @@ function AppRoutes() {
       />
 
       <Route
+        path="/venues/create"
+        element={
+          <ProtectedLayout>
+            <VenueFormPage />
+          </ProtectedLayout>
+        }
+      />
+
+      <Route
+        path="/venues/edit/:id"
+        element={
+          <ProtectedLayout>
+            <VenueFormPage />
+          </ProtectedLayout>
+        }
+      />
+
+      {/* EVENTS */}
+      <Route
         path="/events"
         element={
           <PageLayout>
             <EventPage />
           </PageLayout>
+        }
+      />
+
+      <Route
+        path="/events/create"
+        element={
+          <ProtectedLayout>
+            <EventFormPage />
+          </ProtectedLayout>
+        }
+      />
+
+      <Route
+        path="/events/edit/:id"
+        element={
+          <ProtectedLayout>
+            <EventFormPage />
+          </ProtectedLayout>
         }
       />
 

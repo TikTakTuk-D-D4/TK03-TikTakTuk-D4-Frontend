@@ -23,12 +23,13 @@ const demoUsers = {
   },
 };
 
-export function loginAs(role) {
-  const user = demoUsers[role];
-
-  if (!user) {
-    throw new Error(`Unknown role: ${role}`);
-  }
+// Login using demo users (fallback to simple role if needed)
+export function loginAs(role = "admin") {
+  const user =
+    demoUsers[role] || {
+      username: `${role}_demo`,
+      role,
+    };
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
   return user;
@@ -38,15 +39,29 @@ export function getDemoUsers() {
   return demoUsers;
 }
 
+// Logout
 export function logout() {
   localStorage.removeItem(STORAGE_KEY);
 }
 
+// Get current user safely
 export function getCurrentUser() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  return raw ? JSON.parse(raw) : null;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (error) {
+    console.error("Error parsing user:", error);
+    return null;
+  }
 }
 
+// Admin / organizer only
+export function isAdminOrOrganizer() {
+  const user = getCurrentUser();
+  return user?.role === "admin" || user?.role === "organizer";
+}
+
+// Fallback for pages
 export function getPageUser() {
   return getCurrentUser() || demoUsers.admin;
 }
