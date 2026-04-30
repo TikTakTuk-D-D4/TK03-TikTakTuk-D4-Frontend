@@ -26,6 +26,7 @@ function PageLayout({ children }) {
       <main className="page-container">{children}</main>
     </div>
   );
+}
 
 function ProtectedLayout({ children }) {
   const user = getCurrentUser();
@@ -50,7 +51,7 @@ function TicketRedirect() {
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<Navigate to="/ticket-categories" replace />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
@@ -76,18 +77,18 @@ function AppRoutes() {
       <Route
         path="/venues/create"
         element={
-          <ProtectedLayout>
+          <PageLayout>
             <VenueFormPage />
-          </ProtectedLayout>
+          </PageLayout>
         }
       />
 
       <Route
         path="/venues/edit/:id"
         element={
-          <ProtectedLayout>
+          <PageLayout>
             <VenueFormPage />
-          </ProtectedLayout>
+          </PageLayout>
         }
       />
 
@@ -104,18 +105,18 @@ function AppRoutes() {
       <Route
         path="/events/create"
         element={
-          <ProtectedLayout>
+          <PageLayout>
             <EventFormPage />
-          </ProtectedLayout>
+          </PageLayout>
         }
       />
 
       <Route
         path="/events/edit/:id"
         element={
-          <ProtectedLayout>
+          <PageLayout>
             <EventFormPage />
-          </ProtectedLayout>
+          </PageLayout>
         }
       />
 
