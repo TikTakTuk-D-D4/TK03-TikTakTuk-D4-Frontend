@@ -17,7 +17,7 @@ import OrderPage from "../features/order-promotion/pages/OrderPage";
 import PromotionPage from "../features/order-promotion/pages/PromotionPage";
 import TicketPage from "../features/ticket-seat/pages/TicketPage";
 import SeatPage from "../features/ticket-seat/pages/SeatPage";
-import { getPageUser } from "../features/auth/services/authService";
+import { getCurrentUser, getPageUser } from "../features/auth/services/authService";
 
 function PageLayout({ children }) {
   return (
@@ -51,7 +51,7 @@ function TicketRedirect() {
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/ticket-categories" replace />} />
+      <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
