@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../../../components/ui/Button";
-import { loginAs } from "../services/authService";
+import { getDemoUsers, loginWithCredentials } from "../services/authService";
 
 function LoginPage() {
   const navigate = useNavigate();
 
   const [role, setRole] = useState("admin");
-  const [username, setUsername] = useState("admin_demo");
-  const [password, setPassword] = useState("password123");
+  const [email, setEmail] = useState("admin@tiktaktuk.id");
+  const [password, setPassword] = useState("demo123");
   const [error, setError] = useState("");
 
   const roleOptions = [
@@ -33,24 +33,27 @@ function LoginPage() {
   ];
 
   const handleRoleChange = (nextRole) => {
+    const demoUsers = getDemoUsers();
+    const nextEmail = demoUsers?.[nextRole]?.email || "";
     setRole(nextRole);
-    setUsername(`${nextRole}_demo`);
+    setEmail(nextEmail);
+    setPassword("demo123");
     setError("");
   };
 
   const handleSubmit = (event) => {
     event.preventDefault();
 
-    if (!username.trim() || !password.trim()) {
-      setError("Username dan password wajib diisi.");
+    if (!email.trim() || !password.trim()) {
+      setError("Email dan password wajib diisi.");
       return;
     }
 
     try {
-      loginAs(role);
+      loginWithCredentials({ email, password });
       navigate("/dashboard");
     } catch (submitError) {
-      setError(submitError.message);
+      setError(submitError.message || "Email atau password salah.");
     }
   };
 
@@ -94,18 +97,18 @@ function LoginPage() {
         <div className="auth-head">
           <span className="eyebrow">Login</span>
           <h2>Masuk ke Akun Anda</h2>
-          <p>Masukkan username dan password, lalu pilih role demo.</p>
+          <p>Masukkan email dan password, lalu pilih role demo.</p>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <label className="form-field">
-            <span>Username</span>
+            <span>Email</span>
             <input
               className="input"
-              type="text"
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              placeholder="Masukkan username"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="Masukkan email"
             />
           </label>
 

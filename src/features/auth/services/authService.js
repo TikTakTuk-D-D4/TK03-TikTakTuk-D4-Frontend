@@ -5,6 +5,7 @@ const demoUsers = {
   admin: {
     user_id: "usr-admin-001",
     username: "admin_demo",
+    email: "admin@tiktaktuk.id",
     name: "Alya Admin",
     role: "admin",
     password: DEFAULT_PASSWORD,
@@ -12,6 +13,7 @@ const demoUsers = {
   organizer: {
     user_id: "usr-org-001",
     username: "organizer_demo",
+    email: "organizer@tiktaktuk.id",
     name: "Raka Organizer",
     role: "organizer",
     organizer_id: "org-001",
@@ -20,6 +22,7 @@ const demoUsers = {
   customer: {
     user_id: "usr-cust-001",
     username: "customer_demo",
+    email: "customer@tiktaktuk.id",
     name: "Budi Santoso",
     role: "customer",
     customer_id: "cust-001",
@@ -37,6 +40,23 @@ export function loginAs(role = "admin") {
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
   return user;
+}
+
+export function loginWithCredentials({ email = "", password = "" } = {}) {
+  const normalizedEmail = String(email).trim().toLowerCase();
+  const normalizedPassword = String(password);
+
+  const matchedUser = Object.values(demoUsers).find(
+    (user) => String(user.email || "").toLowerCase() === normalizedEmail,
+  );
+
+  if (!matchedUser || normalizedPassword !== matchedUser.password) {
+    throw new Error("Email atau password salah.");
+  }
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(matchedUser));
+  window.dispatchEvent(new CustomEvent("tiktaktuk:user", { detail: matchedUser }));
+  return matchedUser;
 }
 
 export function getDemoUsers() {
