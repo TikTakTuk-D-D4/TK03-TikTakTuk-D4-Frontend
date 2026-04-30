@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../../../components/ui/Button";
 import { getDemoUsers, loginWithCredentials } from "../services/authService";
+import GuestNavbar from "../../../components/layout/GuestNavbar";
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -58,6 +59,8 @@ function LoginPage() {
   };
 
   return (
+    <>
+    <GuestNavbar />
     <section className="auth-screen">
       <div className="hero-pane">
         <div className="brand">
@@ -150,11 +153,9 @@ function LoginPage() {
           </Button>
         </form>
 
-        <p className="linkline">
-          Belum punya akun? <Link to="/register">Daftar sekarang</Link>.
-        </p>
       </div>
     </section>
+    </>
   );
 }
 

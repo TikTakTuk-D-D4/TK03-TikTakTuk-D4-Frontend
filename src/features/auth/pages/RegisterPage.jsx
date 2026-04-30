@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../../../components/ui/Button";
+import GuestNavbar from "../../../components/layout/GuestNavbar";
 
 function RegisterPage() {
   const navigate = useNavigate();
@@ -89,6 +90,8 @@ function RegisterPage() {
   };
 
   return (
+    <>
+    <GuestNavbar />
     <section className="auth-screen register-screen auth-screen-wide">
       <div className="hero-pane">
         <div className="brand">
@@ -272,6 +275,7 @@ function RegisterPage() {
         </p>
       </div>
     </section>
+    </>
   );
 }
 

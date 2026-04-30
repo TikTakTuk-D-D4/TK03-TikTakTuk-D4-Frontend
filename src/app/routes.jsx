@@ -5,6 +5,7 @@ import LoginPage from "../features/auth/pages/LoginPage";
 import RegisterPage from "../features/auth/pages/RegisterPage";
 
 import DashboardPage from "../features/dashboard/pages/DashboardPage";
+import ProfilePage from "../features/dashboard/pages/ProfilePage";
 import VenuePage from "../features/venue-event/pages/VenuePage";
 import VenueFormPage from "../features/venue-event/pages/VenueFormPage";
 import EventPage from "../features/venue-event/pages/EventPage";
@@ -59,6 +60,15 @@ function AppRoutes() {
         element={
           <PageLayout>
             <DashboardPage />
+          </PageLayout>
+        }
+      />
+
+      <Route
+        path="/profile"
+        element={
+          <PageLayout>
+            <ProfilePage />
           </PageLayout>
         }
       />

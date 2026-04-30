@@ -104,9 +104,19 @@ function VenueFormPage() {
             <option value="reserved">Reserved</option>
           </select>
 
-          <button type="submit" className="btn-save">
-            Simpan
-          </button>
+          <div style={{ display: "flex", gap: "12px" }}>
+            <button
+              type="button"
+              className="btn-save"
+              style={{ background: "transparent", border: "1px solid #2a2a2a", color: "#aaa", flex: 1 }}
+              onClick={() => navigate("/venues")}
+            >
+              Batal
+            </button>
+            <button type="submit" className="btn-save" style={{ flex: 2 }}>
+              Simpan
+            </button>
+          </div>
         </form>
       </div>
 

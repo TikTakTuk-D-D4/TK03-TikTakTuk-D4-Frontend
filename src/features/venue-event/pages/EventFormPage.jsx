@@ -143,7 +143,12 @@ function EventFormPage() {
           onChange={(e) => handleChange("description", e.target.value)}
         />
 
-        <button type="submit">Simpan</button>
+        <div className="flex gap-3">
+          <button type="button" onClick={() => navigate("/events")}>
+            Batal
+          </button>
+          <button type="submit">Simpan</button>
+        </div>
       </form>
     </div>
   );

@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { getPageUser } from "../../auth/services/authService";
 
 import { Card, CardContent } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
@@ -30,7 +31,10 @@ import {
 } from "../utils/orderUtils";
 
 export default function OrderPage() {
-  const [role, setRole] = useState("CUSTOMER");
+  const [role, setRole] = useState(() => {
+    const loggedIn = getPageUser();
+    return (loggedIn?.role || "customer").toUpperCase();
+  });
 
   const [orders, setOrders] = useState(orderDummyData.orders);
   const [selectedCategoryId, setSelectedCategoryId] = useState(

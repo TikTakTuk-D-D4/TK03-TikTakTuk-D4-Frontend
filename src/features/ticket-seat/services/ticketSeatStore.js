@@ -417,6 +417,7 @@ export function getManagedVenuesForUser(user) {
   if (user.role === "organizer") {
     return state.venues.filter((venue) => venue.organizer_id === user.organizer_id);
   }
+  if (user.role === "customer") return state.venues;
   return [];
 }
 
@@ -430,6 +431,7 @@ export function getManagedEventsForUser(user) {
 }
 
 export function getVisibleSeatsForUser(user) {
+  if (user?.role === "customer") return state.seats;
   const managedVenues = getManagedVenuesForUser(user);
   const managedVenueIds = new Set(managedVenues.map((venue) => venue.venue_id));
   return state.seats.filter((seat) => managedVenueIds.has(seat.venue_id));

@@ -106,14 +106,6 @@ function TicketPage() {
     );
   }
 
-  if (isMyTicketsPath && user?.role !== "customer") {
-    return (
-      <AccessDenied
-        title="Halaman Tiket Saya hanya untuk Customer."
-        description="Gunakan Manajemen Tiket untuk melihat dan mengelola tiket lintas customer."
-      />
-    );
-  }
 
   const isManagementView = canAccessTicketManagement(user?.role);
   const visibleTickets = getVisibleTicketsForUser(user).map(getTicketViewModel).sort(ticketSort);

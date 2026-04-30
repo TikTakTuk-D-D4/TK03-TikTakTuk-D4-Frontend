@@ -58,14 +58,7 @@ function SeatPage() {
     }, 2800);
   };
 
-  if (!canAccessSeatManagement(user?.role)) {
-    return (
-      <AccessDenied
-        title="Manajemen Kursi hanya untuk Admin dan Organizer."
-        description="Customer tidak dapat mengakses halaman ini. Gunakan menu tiket untuk melihat kepemilikan tiket."
-      />
-    );
-  }
+  const canManage = canAccessSeatManagement(user?.role);
 
   const managedVenues = getManagedVenuesForUser(user);
   const visibleSeats = getVisibleSeatsForUser(user).map(getSeatViewModel).sort(sortSeatView);
@@ -236,12 +229,14 @@ function SeatPage() {
     <>
       <div className="page ticket-seat-page">
         <PageHeader
-          title="Manajemen Kursi"
-          subtitle="Kelola kursi venue untuk reserved seating."
+          title={canManage ? "Manajemen Kursi" : "Daftar Kursi"}
+          subtitle={canManage ? "Kelola kursi venue untuk reserved seating." : "Lihat denah dan daftar kursi yang tersedia."}
           action={
-            <button className="btn btn-primary" type="button" onClick={openCreateModal}>
-              + Tambah Kursi
-            </button>
+            canManage ? (
+              <button className="btn btn-primary" type="button" onClick={openCreateModal}>
+                + Tambah Kursi
+              </button>
+            ) : null
           }
         />
 
@@ -364,7 +359,7 @@ function SeatPage() {
                     <th>Row</th>
                     <th>Seat Number</th>
                     <th>Status</th>
-                    <th>Actions</th>
+                    {canManage ? <th>Actions</th> : <th />}
                   </tr>
                 </thead>
                 <tbody>
@@ -380,16 +375,18 @@ function SeatPage() {
                           {seat.status}
                         </span>
                       </td>
-                      <td>
-                        <div className="action-row">
-                          <button className="btn btn-ghost btn-sm" type="button" onClick={() => openEditModal(seat)}>
-                            Edit
-                          </button>
-                          <button className="btn btn-danger btn-sm" type="button" onClick={() => openDeleteModal(seat)}>
-                            Delete
-                          </button>
-                        </div>
-                      </td>
+                      {canManage ? (
+                        <td>
+                          <div className="action-row">
+                            <button className="btn btn-ghost btn-sm" type="button" onClick={() => openEditModal(seat)}>
+                              Edit
+                            </button>
+                            <button className="btn btn-danger btn-sm" type="button" onClick={() => openDeleteModal(seat)}>
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      ) : <td>-</td>}
                     </tr>
                   ))}
                 </tbody>

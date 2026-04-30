@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getPageUser, updateCurrentUser, updateUserPassword } from "../../auth/services/authService";
+import { getPageUser } from "../../auth/services/authService";
 import { events } from "../../../mocks/events";
 import { venues } from "../../../mocks/venues";
 import { orders } from "../../../mocks/orders";
@@ -9,7 +9,6 @@ import { customers } from "../../../mocks/customers";
 import { ticketCategories } from "../../../mocks/ticketCategories";
 import { promotions } from "../../../mocks/promotions";
 import { mockArtists } from "../../../data/mockArtists";
-import { Modal } from "../../ticket-seat/components/TicketSeatShared";
 
 const currencyFormat = new Intl.NumberFormat("id-ID", {
   style: "currency",
@@ -85,10 +84,6 @@ function getDisplayName(user) {
   return user?.name || user?.full_name || user?.organizer_name || user?.username || "User";
 }
 
-function isValidEmail(value) {
-  return /.+@.+\..+/.test(value);
-}
-
 function getStatusLabel(status) {
   switch (status) {
     case "paid":
@@ -115,23 +110,6 @@ function getStatusClass(status) {
 
 function DashboardPage() {
   const [user, setUser] = useState(() => getPageUser());
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [passwordOpen, setPasswordOpen] = useState(false);
-  const [profileForm, setProfileForm] = useState({
-    full_name: "",
-    phone_number: "",
-    organizer_name: "",
-    contact_email: "",
-  });
-  const [passwordForm, setPasswordForm] = useState({
-    current_password: "",
-    new_password: "",
-    confirm_password: "",
-  });
-  const [profileErrors, setProfileErrors] = useState({});
-  const [passwordErrors, setPasswordErrors] = useState({});
-  const [profileMessage, setProfileMessage] = useState("");
-  const [passwordMessage, setPasswordMessage] = useState("");
 
   useEffect(() => {
     const handleUserUpdate = (event) => {
@@ -145,7 +123,6 @@ function DashboardPage() {
   const isAdmin = user?.role === "admin";
   const isOrganizer = user?.role === "organizer";
   const isCustomer = user?.role === "customer";
-  const canEditProfile = isCustomer || isOrganizer;
   const organizerId = user?.organizer_id || user?.organizerId || "org-001";
   const customerId = user?.customer_id || user?.customerId || "cust-001";
 
@@ -237,23 +214,6 @@ function DashboardPage() {
   const roleLabel = isAdmin ? "Administrator" : isOrganizer ? "Organizer" : "Customer";
   const displayName = getDisplayName(user);
 
-  const profileRows = [
-    { label: "Username", value: user?.username || "-" },
-    { label: "User ID", value: user?.user_id || user?.id || "-" },
-  ];
-
-  if (isOrganizer) {
-    profileRows.push({ label: "Organizer ID", value: organizerId });
-    profileRows.push({ label: "Nama Organizer", value: user?.organizer_name || user?.name || "-" });
-    profileRows.push({ label: "Email Kontak", value: user?.contact_email || "-" });
-  }
-
-  if (isCustomer) {
-    profileRows.push({ label: "Customer ID", value: customerId });
-    profileRows.push({ label: "Nama Lengkap", value: user?.full_name || user?.name || "-" });
-    profileRows.push({ label: "No. Telepon", value: user?.phone_number || "-" });
-  }
-
   const quickActions = isCustomer
     ? [
         { label: "Cari Event", path: "/events", variant: "primary" },
@@ -271,135 +231,6 @@ function DashboardPage() {
           { label: "Tambah Venue", path: "/venues/create", variant: "ghost" },
           { label: "Kelola Artist", path: "/artists", variant: "ghost" },
         ];
-
-  const openProfileModal = () => {
-    setProfileErrors({});
-    setProfileMessage("");
-    setProfileForm({
-      full_name: user?.full_name || user?.name || "",
-      phone_number: user?.phone_number || "",
-      organizer_name: user?.organizer_name || user?.name || "",
-      contact_email: user?.contact_email || "",
-    });
-    setProfileOpen(true);
-  };
-
-  const closeProfileModal = () => {
-    setProfileOpen(false);
-    setProfileErrors({});
-    setProfileMessage("");
-  };
-
-  const openPasswordModal = () => {
-    setPasswordErrors({});
-    setPasswordMessage("");
-    setPasswordForm({ current_password: "", new_password: "", confirm_password: "" });
-    setPasswordOpen(true);
-  };
-
-  const closePasswordModal = () => {
-    setPasswordOpen(false);
-    setPasswordErrors({});
-    setPasswordMessage("");
-  };
-
-  const handleProfileSubmit = (event) => {
-    event.preventDefault();
-
-    if (!canEditProfile) {
-      setProfileErrors({ form: "Profil untuk role ini tidak dapat diubah." });
-      return;
-    }
-
-    const nextErrors = {};
-
-    if (isCustomer) {
-      if (!profileForm.full_name.trim()) {
-        nextErrors.full_name = "Nama lengkap wajib diisi.";
-      }
-      if (!profileForm.phone_number.trim()) {
-        nextErrors.phone_number = "Nomor telepon wajib diisi.";
-      }
-    }
-
-    if (isOrganizer) {
-      if (!profileForm.organizer_name.trim()) {
-        nextErrors.organizer_name = "Nama organizer wajib diisi.";
-      }
-      if (!profileForm.contact_email.trim()) {
-        nextErrors.contact_email = "Email kontak wajib diisi.";
-      } else if (!isValidEmail(profileForm.contact_email.trim())) {
-        nextErrors.contact_email = "Format email tidak valid.";
-      }
-    }
-
-    if (Object.keys(nextErrors).length) {
-      setProfileErrors(nextErrors);
-      return;
-    }
-
-    const patch = isCustomer
-      ? {
-          name: profileForm.full_name.trim(),
-          full_name: profileForm.full_name.trim(),
-          phone_number: profileForm.phone_number.trim(),
-        }
-      : {
-          name: profileForm.organizer_name.trim(),
-          organizer_name: profileForm.organizer_name.trim(),
-          contact_email: profileForm.contact_email.trim(),
-        };
-
-    const updated = updateCurrentUser(patch);
-    setUser(updated);
-    setProfileErrors({});
-    setProfileMessage("Profil berhasil diperbarui.");
-  };
-
-  const handlePasswordSubmit = (event) => {
-    event.preventDefault();
-    const nextErrors = {};
-
-    if (!passwordForm.current_password) {
-      nextErrors.current_password = "Password lama wajib diisi.";
-    }
-
-    if (!passwordForm.new_password) {
-      nextErrors.new_password = "Password baru wajib diisi.";
-    } else if (passwordForm.new_password.length < 6) {
-      nextErrors.new_password = "Password minimal 6 karakter.";
-    }
-
-    if (!passwordForm.confirm_password) {
-      nextErrors.confirm_password = "Konfirmasi password wajib diisi.";
-    } else if (passwordForm.confirm_password !== passwordForm.new_password) {
-      nextErrors.confirm_password = "Konfirmasi tidak cocok.";
-    }
-
-    if (passwordForm.current_password === passwordForm.new_password) {
-      nextErrors.new_password = "Password baru harus berbeda.";
-    }
-
-    if (Object.keys(nextErrors).length) {
-      setPasswordErrors(nextErrors);
-      return;
-    }
-
-    const result = updateUserPassword({
-      currentPassword: passwordForm.current_password,
-      nextPassword: passwordForm.new_password,
-    });
-
-    if (!result.ok) {
-      setPasswordErrors({ form: result.error || "Gagal mengubah password." });
-      return;
-    }
-
-    setUser(result.user);
-    setPasswordErrors({});
-    setPasswordMessage("Password berhasil diubah.");
-    setPasswordForm({ current_password: "", new_password: "", confirm_password: "" });
-  };
 
   return (
     <div className="page dashboard">
@@ -540,34 +371,6 @@ function DashboardPage() {
         </div>
 
         <aside className="dashboard-stack">
-          <section className="surface-card pad profile-card">
-            <div className="profile-head">
-              <div className="avatar">{displayName.charAt(0)}</div>
-              <div className="profile-name">
-                <strong>{displayName}</strong>
-                <span>{roleLabel} Account</span>
-              </div>
-            </div>
-
-            <div className="profile-rows">
-              {profileRows.map((row) => (
-                <div className="profile-row" key={row.label}>
-                  <span>{row.label}</span>
-                  <strong className="mono">{row.value}</strong>
-                </div>
-              ))}
-            </div>
-
-            <div className="dashboard-hero-chips">
-              <button className="btn btn-ghost btn-sm" type="button" onClick={openProfileModal}>
-                Edit Profil
-              </button>
-              <button className="btn btn-primary btn-sm" type="button" onClick={openPasswordModal}>
-                Update Password
-              </button>
-            </div>
-          </section>
-
           <section className="surface-card pad quick-actions">
             <div>
               <h2>Akses Cepat</h2>
@@ -588,163 +391,6 @@ function DashboardPage() {
         </aside>
       </div>
 
-      <Modal
-        open={profileOpen}
-        title="Update Profil"
-        onClose={closeProfileModal}
-        footer={
-          <>
-            <button className="btn btn-ghost" type="button" onClick={closeProfileModal}>
-              Batal
-            </button>
-            <button
-              className="btn btn-primary"
-              type="submit"
-              form="profile-form"
-              disabled={!canEditProfile}
-            >
-              Simpan
-            </button>
-          </>
-        }
-      >
-        <form className="form-section" id="profile-form" onSubmit={handleProfileSubmit}>
-          <label>
-            Username
-            <input type="text" value={user?.username || ""} disabled />
-            <span className="hint">Username tidak dapat diubah.</span>
-          </label>
-
-          {isCustomer ? (
-            <>
-              <label>
-                Nama Lengkap
-                <input
-                  type="text"
-                  value={profileForm.full_name}
-                  onChange={(event) =>
-                    setProfileForm((current) => ({ ...current, full_name: event.target.value }))
-                  }
-                />
-                {profileErrors.full_name ? <span className="form-error">{profileErrors.full_name}</span> : null}
-              </label>
-              <label>
-                No. Telepon
-                <input
-                  type="text"
-                  value={profileForm.phone_number}
-                  onChange={(event) =>
-                    setProfileForm((current) => ({ ...current, phone_number: event.target.value }))
-                  }
-                />
-                {profileErrors.phone_number ? (
-                  <span className="form-error">{profileErrors.phone_number}</span>
-                ) : null}
-              </label>
-            </>
-          ) : null}
-
-          {isOrganizer ? (
-            <>
-              <label>
-                Nama Organizer
-                <input
-                  type="text"
-                  value={profileForm.organizer_name}
-                  onChange={(event) =>
-                    setProfileForm((current) => ({ ...current, organizer_name: event.target.value }))
-                  }
-                />
-                {profileErrors.organizer_name ? (
-                  <span className="form-error">{profileErrors.organizer_name}</span>
-                ) : null}
-              </label>
-              <label>
-                Email Kontak
-                <input
-                  type="email"
-                  value={profileForm.contact_email}
-                  onChange={(event) =>
-                    setProfileForm((current) => ({ ...current, contact_email: event.target.value }))
-                  }
-                />
-                {profileErrors.contact_email ? (
-                  <span className="form-error">{profileErrors.contact_email}</span>
-                ) : null}
-              </label>
-            </>
-          ) : null}
-
-          {!canEditProfile ? (
-            <div className="helper-block">
-              Akun {roleLabel.toLowerCase()} tidak memiliki data profil yang bisa diperbarui.
-            </div>
-          ) : null}
-
-          {profileErrors.form ? <span className="form-error">{profileErrors.form}</span> : null}
-          {profileMessage ? <span className="hint">{profileMessage}</span> : null}
-        </form>
-      </Modal>
-
-      <Modal
-        open={passwordOpen}
-        title="Update Password"
-        onClose={closePasswordModal}
-        footer={
-          <>
-            <button className="btn btn-ghost" type="button" onClick={closePasswordModal}>
-              Batal
-            </button>
-            <button className="btn btn-primary" type="submit" form="password-form">
-              Simpan
-            </button>
-          </>
-        }
-      >
-        <form className="form-section" id="password-form" onSubmit={handlePasswordSubmit}>
-          <label>
-            Password Lama
-            <input
-              type="password"
-              value={passwordForm.current_password}
-              onChange={(event) =>
-                setPasswordForm((current) => ({ ...current, current_password: event.target.value }))
-              }
-            />
-            {passwordErrors.current_password ? (
-              <span className="form-error">{passwordErrors.current_password}</span>
-            ) : null}
-          </label>
-          <label>
-            Password Baru
-            <input
-              type="password"
-              value={passwordForm.new_password}
-              onChange={(event) =>
-                setPasswordForm((current) => ({ ...current, new_password: event.target.value }))
-              }
-            />
-            {passwordErrors.new_password ? (
-              <span className="form-error">{passwordErrors.new_password}</span>
-            ) : null}
-          </label>
-          <label>
-            Konfirmasi Password
-            <input
-              type="password"
-              value={passwordForm.confirm_password}
-              onChange={(event) =>
-                setPasswordForm((current) => ({ ...current, confirm_password: event.target.value }))
-              }
-            />
-            {passwordErrors.confirm_password ? (
-              <span className="form-error">{passwordErrors.confirm_password}</span>
-            ) : null}
-          </label>
-          {passwordErrors.form ? <span className="form-error">{passwordErrors.form}</span> : null}
-          {passwordMessage ? <span className="hint">{passwordMessage}</span> : null}
-        </form>
-      </Modal>
     </div>
   );
 }
