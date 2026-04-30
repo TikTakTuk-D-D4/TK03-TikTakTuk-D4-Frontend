@@ -6,8 +6,6 @@ function Navbar() {
   const navigate = useNavigate();
   const user = getPageUser();
 
-  const menus = navByRole[user.role] || [];
-
   const handleLogout = () => {
     logout();
     navigate("/dashboard");
@@ -48,3 +46,5 @@ function Navbar() {
 }
 
 export default Navbar;
+
+

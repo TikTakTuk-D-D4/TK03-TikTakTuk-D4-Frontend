@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import Navbar from "../components/layout/Navbar";
+import AppShell from "../components/layout/AppShell";
 import LoginPage from "../features/auth/pages/LoginPage";
 import RegisterPage from "../features/auth/pages/RegisterPage";
 import DashboardPage from "../features/dashboard/pages/DashboardPage";
@@ -20,6 +20,15 @@ function PageLayout({ children }) {
       <main className="page-container">{children}</main>
     </div>
   );
+
+function ProtectedLayout({ children }) {
+  const user = getCurrentUser();
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <AppShell>{children}</AppShell>;
 }
 
 function TicketRedirect() {
