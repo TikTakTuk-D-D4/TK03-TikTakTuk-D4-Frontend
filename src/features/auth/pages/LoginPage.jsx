@@ -1,15 +1,50 @@
 import { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
-import { getCurrentUser, loginAs } from "../services/authService";
+import { Link, useNavigate } from "react-router-dom";
+import { Button } from "../../../components/ui/Button";
+import { loginAs } from "../services/authService";
 
 function LoginPage() {
   const navigate = useNavigate();
-  const currentUser = getCurrentUser();
+
   const [role, setRole] = useState("admin");
+  const [username, setUsername] = useState("admin_demo");
+  const [password, setPassword] = useState("password123");
   const [error, setError] = useState("");
+
+  const roleOptions = [
+    {
+      value: "admin",
+      label: "Admin",
+      icon: "🛡️",
+      hint: "Kelola sistem, tiket, promo, dan data utama.",
+    },
+    {
+      value: "organizer",
+      label: "Organizer",
+      icon: "🏢",
+      hint: "Kelola event, venue, kursi, dan tiket.",
+    },
+    {
+      value: "customer",
+      label: "Customer",
+      icon: "🎫",
+      hint: "Cari event, pesan tiket, dan lihat tiket saya.",
+    },
+  ];
+
+  const handleRoleChange = (nextRole) => {
+    setRole(nextRole);
+    setUsername(`${nextRole}_demo`);
+    setError("");
+  };
 
   const handleSubmit = (event) => {
     event.preventDefault();
+
+    if (!username.trim() || !password.trim()) {
+      setError("Username dan password wajib diisi.");
+      return;
+    }
 
     try {
       loginAs(role);
@@ -23,7 +58,7 @@ function LoginPage() {
     <section className="auth-screen">
       <div className="hero-pane">
         <div className="brand">
-          <div className="brand-mark">TT</div>
+          <div className="brand-mark">TTK</div>
           <div>
             <div className="brand-word">TikTakTuk</div>
             <div className="brand-sub">Concert Ticketing Platform</div>
@@ -31,12 +66,12 @@ function LoginPage() {
         </div>
 
         <div className="hero-copy">
-          <h1>Frontend TK03 untuk alur ticket dan seat.</h1>
+          <span className="hero-pill">🟢 Demo frontend TK03</span>
+          <h1>Masuk ke pengalaman konser digital.</h1>
           <p>
-            Pilih role demo untuk menguji akses ke Manajemen Kursi, Manajemen Tiket, dan Tiket Saya
-            tanpa backend.
+            Gunakan akun demo untuk menguji dashboard, event, ticket category,
+            order, ticket, dan seat sesuai role pengguna.
           </p>
-          <span className="hero-pill">Dark neon purple design system enabled</span>
         </div>
 
         <div className="hero-meta">
@@ -45,46 +80,75 @@ function LoginPage() {
             <span>Demo roles</span>
           </div>
           <div className="meta-card">
-            <b>15</b>
-            <span>Dummy seats</span>
+            <b>22</b>
+            <span>Fitur TK03</span>
           </div>
           <div className="meta-card">
-            <b>5</b>
-            <span>Issued tickets</span>
+            <b>Dark</b>
+            <span>Neon system</span>
           </div>
         </div>
       </div>
 
       <div className="auth-pane">
         <div className="auth-head">
-          <h2>Login Demo</h2>
-          <p>Masuk cepat untuk memeriksa flow frontend sesuai role.</p>
+          <span className="eyebrow">Login</span>
+          <h2>Masuk ke Akun Anda</h2>
+          <p>Masukkan username dan password, lalu pilih role demo.</p>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
+          <label className="form-field">
+            <span>Username</span>
+            <input
+              className="input"
+              type="text"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              placeholder="Masukkan username"
+            />
+          </label>
+
+          <label className="form-field">
+            <span>Password</span>
+            <input
+              className="input"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Masukkan password"
+            />
+          </label>
+
+          <div className="divider-with-text">Pilih role demo</div>
+
           <div className="role-picker">
-            {["admin", "organizer", "customer"].map((item) => (
+            {roleOptions.map((item) => (
               <button
-                className={`role-opt${role === item ? " active" : ""}`}
-                key={item}
+                className={`role-opt${role === item.value ? " active" : ""}`}
+                key={item.value}
                 type="button"
-                onClick={() => setRole(item)}
+                onClick={() => handleRoleChange(item.value)}
               >
-                <span className="role-icon">{item === "admin" ? "A" : item === "organizer" ? "O" : "C"}</span>
-                <span>{item}</span>
+                <span className="role-icon">{item.icon}</span>
+                <span>{item.label}</span>
               </button>
             ))}
           </div>
 
-          <button className="btn btn-primary" type="submit">
-            Masuk sebagai {role}
-          </button>
+          <p className="helper-text">
+            Role aktif: <strong>{role}</strong>. 
+          </p>
 
           {error ? <span className="form-error">{error}</span> : null}
+
+          <Button variant="primary" type="submit">
+            Masuk
+          </Button>
         </form>
 
         <p className="linkline">
-          Belum perlu registrasi untuk TK03. <Link to="/register">Lihat halaman register</Link>.
+          Belum punya akun? <Link to="/register">Daftar sekarang</Link>.
         </p>
       </div>
     </section>

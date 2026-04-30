@@ -1393,3 +1393,91 @@ label {
     grid-template-columns: repeat(6, minmax(18px, 1fr));
   }
 }
+
+/* Match Register layout sizing with Login layout */
+.register-screen.auth-screen-wide {
+  min-height: 100vh;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1.08fr 0.92fr;
+  gap: 28px;
+  padding: 24px;
+  align-items: stretch;
+}
+
+.register-screen.auth-screen-wide .hero-pane,
+.register-screen.auth-screen-wide .auth-pane {
+  width: 100%;
+  min-height: calc(100vh - 48px);
+  border-radius: 24px;
+}
+
+.register-screen.auth-screen-wide .hero-pane {
+  padding: 48px;
+}
+
+.register-screen.auth-screen-wide .auth-pane {
+  max-width: none;
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.register-screen.auth-screen-wide .auth-head,
+.register-screen.auth-screen-wide .auth-form,
+.register-screen.auth-screen-wide .linkline {
+  width: 100%;
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.register-screen.auth-screen-wide .auth-form {
+  gap: 14px;
+}
+
+.register-screen.auth-screen-wide .role-picker {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.register-screen.auth-screen-wide .role-opt {
+  min-height: 82px;
+}
+
+.register-screen.auth-screen-wide .input {
+  min-height: 44px;
+}
+
+.register-screen.auth-screen-wide .grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* Make Register hero typography closer to Login */
+.register-screen.auth-screen-wide .hero-copy h1 {
+  max-width: 720px;
+}
+
+.register-screen.auth-screen-wide .hero-copy p {
+  max-width: 680px;
+}
+
+/* Responsive */
+@media (max-width: 980px) {
+  .register-screen.auth-screen-wide {
+    grid-template-columns: 1fr;
+  }
+
+  .register-screen.auth-screen-wide .hero-pane,
+  .register-screen.auth-screen-wide .auth-pane {
+    min-height: auto;
+  }
+
+  .register-screen.auth-screen-wide .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
