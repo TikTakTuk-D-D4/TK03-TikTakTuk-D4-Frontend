@@ -58,45 +58,37 @@ function Navbar() {
         ))}
       </div>
 
-      {user.role === "customer" ? (
-        <div className="navbar-user">
-          <button className="nav-link" type="button" onClick={handleLogout}>
-            Logout
-          </button>
-        </div>
-      ) : (
-        <div className="navbar-user" ref={profileRef}>
-          <button
-            className="profile-menu-btn"
-            type="button"
-            onClick={() => setProfileOpen((open) => !open)}
-          >
-            <span className="user-chip">{user.name || user.username}</span>
-            <span className="profile-caret">Profile</span>
-          </button>
-          {profileOpen ? (
-            <div className="profile-menu-panel">
-              <button
-                className="profile-menu-item"
-                type="button"
-                onClick={() => {
-                  setProfileOpen(false);
-                  navigate("/profile");
-                }}
-              >
-                Profil Saya
-              </button>
-              <button
-                className="profile-menu-item danger"
-                type="button"
-                onClick={handleLogout}
-              >
-                Logout
-              </button>
-            </div>
-          ) : null}
-        </div>
-      )}
+      <div className="navbar-user" ref={profileRef}>
+        <button
+          className="profile-menu-btn"
+          type="button"
+          onClick={() => setProfileOpen((open) => !open)}
+        >
+          <span className="user-chip">{user.name || user.username}</span>
+          <span className="profile-caret">Profile</span>
+        </button>
+        {profileOpen ? (
+          <div className="profile-menu-panel">
+            <button
+              className="profile-menu-item"
+              type="button"
+              onClick={() => {
+                setProfileOpen(false);
+                navigate("/profile");
+              }}
+            >
+              Profil Saya
+            </button>
+            <button
+              className="profile-menu-item danger"
+              type="button"
+              onClick={handleLogout}
+            >
+              Logout
+            </button>
+          </div>
+        ) : null}
+      </div>
     </nav>
   );
 }
