@@ -24,7 +24,7 @@ export default function SeatButton({
       aria-pressed={selected}
       aria-label={`Seat ${seatLabel}`}
       className={[
-        "grid h-10 w-10 place-items-center rounded-[10px] border text-xs font-semibold transition-all",
+        "grid h-10 w-10 shrink-0 place-items-center rounded-[10px] border p-0 text-center text-xs font-semibold leading-none transition-all overflow-hidden",
         selected
           ? "border-accent bg-primary text-white shadow-glow"
           : "border-line-soft bg-surface-2 text-muted hover:border-line hover:bg-white/[0.05] hover:text-text",
@@ -34,7 +34,7 @@ export default function SeatButton({
         className,
       ].join(" ")}
     >
-      {seatLabel}
+      <span className="leading-none">{seatLabel}</span>
     </button>
   );
 }

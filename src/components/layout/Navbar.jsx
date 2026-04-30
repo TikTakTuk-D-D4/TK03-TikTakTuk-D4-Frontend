@@ -1,11 +1,21 @@
+import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { getPageUser, logout } from "../../features/auth/services/authService";
 import { navByRole } from "../../lib/roleConfig";
 
 function Navbar() {
   const navigate = useNavigate();
-  const user = getPageUser();
+  const [user, setUser] = useState(() => getPageUser());
   const menus = navByRole[user.role] || [];
+
+  useEffect(() => {
+    const handleUserUpdate = (event) => {
+      setUser(event?.detail || getPageUser());
+    };
+
+    window.addEventListener("tiktaktuk:user", handleUserUpdate);
+    return () => window.removeEventListener("tiktaktuk:user", handleUserUpdate);
+  }, []);
 
   const handleLogout = () => {
     logout();

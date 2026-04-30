@@ -1,4 +1,5 @@
 const STORAGE_KEY = "tiktaktuk_user";
+const DEFAULT_PASSWORD = "demo123";
 
 const demoUsers = {
   admin: {
@@ -6,6 +7,7 @@ const demoUsers = {
     username: "admin_demo",
     name: "Alya Admin",
     role: "admin",
+    password: DEFAULT_PASSWORD,
   },
   organizer: {
     user_id: "usr-org-001",
@@ -13,6 +15,7 @@ const demoUsers = {
     name: "Raka Organizer",
     role: "organizer",
     organizer_id: "org-001",
+    password: DEFAULT_PASSWORD,
   },
   customer: {
     user_id: "usr-cust-001",
@@ -20,6 +23,7 @@ const demoUsers = {
     name: "Budi Santoso",
     role: "customer",
     customer_id: "cust-001",
+    password: DEFAULT_PASSWORD,
   },
 };
 
@@ -64,4 +68,42 @@ export function isAdminOrOrganizer() {
 // Fallback for pages
 export function getPageUser() {
   return getCurrentUser() || demoUsers.admin;
+}
+
+export function updateCurrentUser(patch = {}) {
+  const current = getCurrentUser() || demoUsers.admin;
+  const next = {
+    ...current,
+    ...patch,
+  };
+
+  if (!next.password) {
+    next.password = current.password || DEFAULT_PASSWORD;
+  }
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  window.dispatchEvent(new CustomEvent("tiktaktuk:user", { detail: next }));
+  return next;
+}
+
+export function updateUserPassword({ currentPassword = "", nextPassword = "" } = {}) {
+  const current = getCurrentUser() || demoUsers.admin;
+  const storedPassword = current.password || DEFAULT_PASSWORD;
+
+  if (!currentPassword) {
+    return { ok: false, error: "Password lama wajib diisi." };
+  }
+
+  if (currentPassword !== storedPassword) {
+    return { ok: false, error: "Password lama tidak sesuai." };
+  }
+
+  const updated = {
+    ...current,
+    password: nextPassword,
+  };
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  window.dispatchEvent(new CustomEvent("tiktaktuk:user", { detail: updated }));
+  return { ok: true, user: updated };
 }
