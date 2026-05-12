@@ -83,7 +83,7 @@ export default function OrderTable({
                   {showCustomerColumn && (
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
-                        <div className="grid h-7 w-7 place-items-center rounded-[10px] bg-primary/20 text-[10px] font-semibold text-accent">
+                        <div className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-[10px] bg-primary/20 text-[10px] font-semibold text-accent">
                           {getInitials(order.customerName)}
                         </div>
                         <span className="text-sm text-text">

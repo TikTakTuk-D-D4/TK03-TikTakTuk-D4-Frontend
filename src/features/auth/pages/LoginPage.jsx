@@ -1,60 +1,57 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "../../../components/ui/Button";
-import { getDemoUsers, loginWithCredentials } from "../services/authService";
+import { useAuth } from "../../../context/AuthContext";
 import GuestNavbar from "../../../components/layout/GuestNavbar";
+
+const DEMO_ACCOUNTS = {
+  admin: { username: "admin_raka", password: "hashed_admin_raka" },
+  organizer: { username: "org_bagas", password: "hashed_org_bagas" },
+  customer: { username: "cust_andini", password: "hashed_cust_andini" },
+};
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const [role, setRole] = useState("admin");
-  const [email, setEmail] = useState("admin@tiktaktuk.id");
-  const [password, setPassword] = useState("demo123");
+  const [role, setRole] = useState("customer");
+  const [username, setUsername] = useState(DEMO_ACCOUNTS.customer.username);
+  const [password, setPassword] = useState(DEMO_ACCOUNTS.customer.password);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const roleOptions = [
-    {
-      value: "admin",
-      label: "Admin",
-      icon: "🛡️",
-      hint: "Kelola sistem, tiket, promo, dan data utama.",
-    },
-    {
-      value: "organizer",
-      label: "Organizer",
-      icon: "🏢",
-      hint: "Kelola event, venue, kursi, dan tiket.",
-    },
-    {
-      value: "customer",
-      label: "Customer",
-      icon: "🎫",
-      hint: "Cari event, pesan tiket, dan lihat tiket saya.",
-    },
+    { value: "admin", label: "Admin", icon: "🛡️", hint: "Kelola sistem, tiket, promo, dan data utama." },
+    { value: "organizer", label: "Organizer", icon: "🏢", hint: "Kelola event, venue, kursi, dan tiket." },
+    { value: "customer", label: "Customer", icon: "🎫", hint: "Cari event, pesan tiket, dan lihat tiket saya." },
   ];
 
   const handleRoleChange = (nextRole) => {
-    const demoUsers = getDemoUsers();
-    const nextEmail = demoUsers?.[nextRole]?.email || "";
     setRole(nextRole);
-    setEmail(nextEmail);
-    setPassword("demo123");
+    setUsername(DEMO_ACCOUNTS[nextRole]?.username || "");
+    setPassword(DEMO_ACCOUNTS[nextRole]?.password || "");
     setError("");
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-
-    if (!email.trim() || !password.trim()) {
-      setError("Email dan password wajib diisi.");
+    if (!username.trim() || !password.trim()) {
+      setError("Username dan password wajib diisi.");
       return;
     }
-
+    const expected = DEMO_ACCOUNTS[role];
+    if (username.trim() !== expected.username) {
+      setError(`Username tidak sesuai dengan role "${role}". Gunakan username: ${expected.username}`);
+      return;
+    }
+    setLoading(true);
     try {
-      loginWithCredentials({ email, password });
+      await login({ username: username.trim(), password });
       navigate("/dashboard");
     } catch (submitError) {
-      setError(submitError.message || "Email atau password salah.");
+      setError(submitError.message || "Username atau password salah.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -100,18 +97,18 @@ function LoginPage() {
         <div className="auth-head">
           <span className="eyebrow">Login</span>
           <h2>Masuk ke Akun Anda</h2>
-          <p>Masukkan email dan password, lalu pilih role demo.</p>
+          <p>Masukkan username dan password, lalu pilih role demo.</p>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <label className="form-field">
-            <span>Email</span>
+            <span>Username</span>
             <input
               className="input"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="Masukkan email"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Masukkan username"
             />
           </label>
 
@@ -121,7 +118,7 @@ function LoginPage() {
               className="input"
               type="password"
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="Masukkan password"
             />
           </label>
@@ -143,13 +140,13 @@ function LoginPage() {
           </div>
 
           <p className="helper-text">
-            Role aktif: <strong>{role}</strong>. 
+            Role aktif: <strong>{role}</strong>.
           </p>
 
           {error ? <span className="form-error">{error}</span> : null}
 
-          <Button variant="primary" type="submit">
-            Masuk
+          <Button variant="primary" type="submit" disabled={loading}>
+            {loading ? "Memuat..." : "Masuk"}
           </Button>
         </form>
 

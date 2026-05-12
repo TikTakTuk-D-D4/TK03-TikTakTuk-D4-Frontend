@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../../../components/ui/Button";
 import GuestNavbar from "../../../components/layout/GuestNavbar";
+import { registerUser } from "../services/authService";
 
 function RegisterPage() {
   const navigate = useNavigate();
@@ -9,7 +10,6 @@ function RegisterPage() {
   const [role, setRole] = useState("customer");
   const [form, setForm] = useState({
     fullName: "",
-    email: "",
     phone: "",
     organizerName: "",
     contactEmail: "",
@@ -20,73 +20,56 @@ function RegisterPage() {
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const roleOptions = [
-    {
-      value: "customer",
-      label: "Customer",
-      icon: "🎫",
-      hint: "Beli tiket dan kelola pesanan.",
-    },
-    {
-      value: "organizer",
-      label: "Organizer",
-      icon: "🏢",
-      hint: "Kelola event dan venue.",
-    },
-    {
-      value: "admin",
-      label: "Admin",
-      icon: "🛡️",
-      hint: "Kelola data platform.",
-    },
+    { value: "customer", label: "Customer", icon: "🎫", hint: "Beli tiket dan kelola pesanan." },
+    { value: "organizer", label: "Organizer", icon: "🏢", hint: "Kelola event dan venue." },
+    { value: "administrator", label: "Admin", icon: "🛡️", hint: "Kelola seluruh sistem." },
   ];
 
   const updateField = (field, value) => {
-    setForm((current) => ({
-      ...current,
-      [field]: value,
-    }));
+    setForm((current) => ({ ...current, [field]: value }));
     setError("");
     setSuccess("");
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const requiredBaseFields = [
-      form.email,
-      form.username,
-      form.password,
-      form.confirmPassword,
-    ];
-
-    const requiredRoleFields =
-      role === "organizer"
-        ? [form.organizerName, form.contactEmail]
-        : [form.fullName];
+    const requiredBaseFields = [form.username, form.password, form.confirmPassword];
+    const requiredRoleFields = role === "organizer"
+      ? [form.organizerName, form.contactEmail]
+      : role === "administrator"
+      ? []
+      : [form.fullName];
 
     const hasEmptyField = [...requiredBaseFields, ...requiredRoleFields].some(
       (value) => !String(value).trim()
     );
 
-    if (hasEmptyField) {
-      setError("Seluruh field wajib diisi.");
-      return;
-    }
+    if (hasEmptyField) { setError("Seluruh field wajib diisi."); return; }
+    if (form.password !== form.confirmPassword) { setError("Password dan konfirmasi password tidak sama."); return; }
+    if (!form.agree) { setError("Anda harus menyetujui syarat dan ketentuan."); return; }
 
-    if (form.password !== form.confirmPassword) {
-      setError("Password dan konfirmasi password tidak sama.");
-      return;
+    setLoading(true);
+    try {
+      await registerUser({
+        username: form.username,
+        password: form.password,
+        role,
+        full_name: form.fullName || null,
+        phone_number: form.phone || null,
+        organizer_name: form.organizerName || null,
+        contact_email: form.contactEmail || null,
+      });
+      setSuccess("Registrasi berhasil. Silakan login.");
+      setTimeout(() => navigate("/login"), 800);
+    } catch (err) {
+      setError(err.message || "Registrasi gagal.");
+    } finally {
+      setLoading(false);
     }
-
-    if (!form.agree) {
-      setError("Anda harus menyetujui syarat dan ketentuan.");
-      return;
-    }
-
-    setSuccess("Registrasi demo berhasil. Silakan login.");
-    setTimeout(() => navigate("/login"), 700);
   };
 
   return (
@@ -103,19 +86,14 @@ function RegisterPage() {
         </div>
 
         <div className="hero-copy">
-          <span className="hero-pill">✨ Register demo</span>
+          <span className="hero-pill">✨ Daftar akun baru</span>
           <h1>Buat akun untuk mulai menikmati event.</h1>
           <p>
-            Pilih jenis pengguna sesuai kebutuhan. Halaman ini hanya
-            menampilkan UI frontend dan validasi ringan tanpa koneksi backend.
+            Pilih jenis pengguna sesuai kebutuhan dan lengkapi data akun Anda.
           </p>
         </div>
 
         <div className="hero-meta">
-          <div className="meta-card">
-            <b>Admin</b>
-            <span>Platform control</span>
-          </div>
           <div className="meta-card">
             <b>Org</b>
             <span>Event manager</span>
@@ -131,7 +109,7 @@ function RegisterPage() {
         <div className="auth-head">
           <span className="eyebrow">Register</span>
           <h2>Daftar Akun Baru</h2>
-          <p>Pilih role lalu lengkapi data akun demo.</p>
+          <p>Pilih role lalu lengkapi data akun.</p>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
@@ -157,9 +135,7 @@ function RegisterPage() {
                   className="input"
                   type="text"
                   value={form.organizerName}
-                  onChange={(event) =>
-                    updateField("organizerName", event.target.value)
-                  }
+                  onChange={(event) => updateField("organizerName", event.target.value)}
                   placeholder="Contoh: TikTakTuk Live"
                 />
               </label>
@@ -170,49 +146,36 @@ function RegisterPage() {
                   className="input"
                   type="email"
                   value={form.contactEmail}
-                  onChange={(event) =>
-                    updateField("contactEmail", event.target.value)
-                  }
+                  onChange={(event) => updateField("contactEmail", event.target.value)}
                   placeholder="organizer@tiktaktuk.com"
                 />
               </label>
             </>
-          ) : (
-            <label className="form-field">
-              <span>Nama Lengkap</span>
-              <input
-                className="input"
-                type="text"
-                value={form.fullName}
-                onChange={(event) => updateField("fullName", event.target.value)}
-                placeholder="Masukkan nama lengkap"
-              />
-            </label>
+          ) : role === "administrator" ? null : (
+            <>
+              <label className="form-field">
+                <span>Nama Lengkap</span>
+                <input
+                  className="input"
+                  type="text"
+                  value={form.fullName}
+                  onChange={(event) => updateField("fullName", event.target.value)}
+                  placeholder="Masukkan nama lengkap"
+                />
+              </label>
+
+              <label className="form-field">
+                <span>Nomor Telepon</span>
+                <input
+                  className="input"
+                  type="tel"
+                  value={form.phone}
+                  onChange={(event) => updateField("phone", event.target.value)}
+                  placeholder="Contoh: 081234567890"
+                />
+              </label>
+            </>
           )}
-
-          {role === "customer" ? (
-            <label className="form-field">
-              <span>Nomor Telepon</span>
-              <input
-                className="input"
-                type="tel"
-                value={form.phone}
-                onChange={(event) => updateField("phone", event.target.value)}
-                placeholder="Contoh: 081234567890"
-              />
-            </label>
-          ) : null}
-
-          <label className="form-field">
-            <span>Email</span>
-            <input
-              className="input"
-              type="email"
-              value={form.email}
-              onChange={(event) => updateField("email", event.target.value)}
-              placeholder="Masukkan email"
-            />
-          </label>
 
           <label className="form-field">
             <span>Username</span>
@@ -243,9 +206,7 @@ function RegisterPage() {
                 className="input"
                 type="password"
                 value={form.confirmPassword}
-                onChange={(event) =>
-                  updateField("confirmPassword", event.target.value)
-                }
+                onChange={(event) => updateField("confirmPassword", event.target.value)}
                 placeholder="Ulangi password"
               />
             </label>
@@ -265,8 +226,8 @@ function RegisterPage() {
           {error ? <span className="form-error">{error}</span> : null}
           {success ? <span className="form-success">{success}</span> : null}
 
-          <Button variant="primary" type="submit">
-            Daftar
+          <Button variant="primary" type="submit" disabled={loading}>
+            {loading ? "Mendaftar..." : "Daftar"}
           </Button>
         </form>
 

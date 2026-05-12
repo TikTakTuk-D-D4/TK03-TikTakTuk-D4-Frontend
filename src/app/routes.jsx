@@ -10,6 +10,7 @@ import VenuePage from "../features/venue-event/pages/VenuePage";
 import VenueFormPage from "../features/venue-event/pages/VenueFormPage";
 import EventPage from "../features/venue-event/pages/EventPage";
 import EventFormPage from "../features/venue-event/pages/EventFormPage";
+import EventArtistPage from "../features/venue-event/pages/EventArtistPage";
 
 import ArtistPage from "../features/artist-ticket-category/pages/ArtistPage";
 import TicketCategoryPage from "../features/artist-ticket-category/pages/TicketCategoryPage";
@@ -17,7 +18,7 @@ import OrderPage from "../features/order-promotion/pages/OrderPage";
 import PromotionPage from "../features/order-promotion/pages/PromotionPage";
 import TicketPage from "../features/ticket-seat/pages/TicketPage";
 import SeatPage from "../features/ticket-seat/pages/SeatPage";
-import { getCurrentUser, getPageUser } from "../features/auth/services/authService";
+import { getCurrentUser } from "../features/auth/services/authService";
 
 function PageLayout({ children }) {
   return (
@@ -28,23 +29,27 @@ function PageLayout({ children }) {
   );
 }
 
-function ProtectedLayout({ children }) {
+// Redirect ke /login jika belum login
+function RequireAuth({ children }) {
   const user = getCurrentUser();
+  if (!user) return <Navigate to="/login" replace />;
+  return <PageLayout>{children}</PageLayout>;
+}
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return <AppShell>{children}</AppShell>;
+// Redirect ke /dashboard jika role tidak termasuk yang diizinkan
+function RequireRole({ roles, children }) {
+  const user = getCurrentUser();
+  if (!user) return <Navigate to="/login" replace />;
+  const normalizedRole = user.role === "administrator" ? "admin" : user.role;
+  if (!roles.includes(normalizedRole)) return <Navigate to="/dashboard" replace />;
+  return <PageLayout>{children}</PageLayout>;
 }
 
 function TicketRedirect() {
-  const user = getPageUser();
-
-  if (user.role === "customer") {
-    return <Navigate to="/my-tickets" replace />;
-  }
-
+  const user = getCurrentUser();
+  if (!user) return <Navigate to="/login" replace />;
+  const role = user.role === "administrator" ? "admin" : user.role;
+  if (role === "customer") return <Navigate to="/my-tickets" replace />;
   return <Navigate to="/manage-tickets" replace />;
 }
 
@@ -55,151 +60,49 @@ function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
-      <Route
-        path="/dashboard"
-        element={
-          <PageLayout>
-            <DashboardPage />
-          </PageLayout>
-        }
-      />
+      {/* Semua role yang sudah login */}
+      <Route path="/dashboard" element={<RequireAuth><DashboardPage /></RequireAuth>} />
+      <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
+      <Route path="/venues" element={<RequireAuth><VenuePage /></RequireAuth>} />
+      <Route path="/events" element={<RequireAuth><EventPage /></RequireAuth>} />
+      <Route path="/artists" element={<RequireAuth><ArtistPage /></RequireAuth>} />
+      <Route path="/ticket-categories" element={<RequireAuth><TicketCategoryPage /></RequireAuth>} />
+      <Route path="/orders" element={<RequireAuth><OrderPage /></RequireAuth>} />
+      <Route path="/promotions" element={<RequireAuth><PromotionPage /></RequireAuth>} />
+      <Route path="/my-tickets" element={<RequireAuth><TicketPage /></RequireAuth>} />
 
-      <Route
-        path="/profile"
-        element={
-          <PageLayout>
-            <ProfilePage />
-          </PageLayout>
-        }
-      />
-
-      {/* VENUE */}
-      <Route
-        path="/venues"
-        element={
-          <PageLayout>
-            <VenuePage />
-          </PageLayout>
-        }
-      />
-
+      {/* Hanya admin dan organizer */}
       <Route
         path="/venues/create"
-        element={
-          <PageLayout>
-            <VenueFormPage />
-          </PageLayout>
-        }
+        element={<RequireRole roles={["admin", "organizer"]}><VenueFormPage /></RequireRole>}
       />
-
       <Route
         path="/venues/edit/:id"
-        element={
-          <PageLayout>
-            <VenueFormPage />
-          </PageLayout>
-        }
+        element={<RequireRole roles={["admin", "organizer"]}><VenueFormPage /></RequireRole>}
       />
-
-      {/* EVENTS */}
       <Route
-        path="/events"
-        element={
-          <PageLayout>
-            <EventPage />
-          </PageLayout>
-        }
+        path="/events/:id/artists"
+        element={<RequireRole roles={["admin", "organizer"]}><EventArtistPage /></RequireRole>}
       />
-
       <Route
         path="/events/create"
-        element={
-          <PageLayout>
-            <EventFormPage />
-          </PageLayout>
-        }
+        element={<RequireRole roles={["admin", "organizer"]}><EventFormPage /></RequireRole>}
       />
-
       <Route
         path="/events/edit/:id"
-        element={
-          <PageLayout>
-            <EventFormPage />
-          </PageLayout>
-        }
+        element={<RequireRole roles={["admin", "organizer"]}><EventFormPage /></RequireRole>}
       />
-
-      <Route
-        path="/artists"
-        element={
-          <PageLayout>
-            <ArtistPage />
-          </PageLayout>
-        }
-      />
-
-      <Route
-        path="/ticket-categories"
-        element={
-          <PageLayout>
-            <TicketCategoryPage />
-          </PageLayout>
-        }
-      />
-
-      <Route
-        path="/orders"
-        element={
-          <PageLayout>
-            <OrderPage />
-          </PageLayout>
-        }
-      />
-
-      <Route
-        path="/promotions"
-        element={
-          <PageLayout>
-            <PromotionPage />
-          </PageLayout>
-        }
-      />
-
-      <Route
-        path="/tickets"
-        element={
-          <PageLayout>
-            <TicketRedirect />
-          </PageLayout>
-        }
-      />
-
       <Route
         path="/manage-tickets"
-        element={
-          <PageLayout>
-            <TicketPage />
-          </PageLayout>
-        }
+        element={<RequireRole roles={["admin", "organizer"]}><TicketPage /></RequireRole>}
       />
-
-      <Route
-        path="/my-tickets"
-        element={
-          <PageLayout>
-            <TicketPage />
-          </PageLayout>
-        }
-      />
-
       <Route
         path="/seats"
-        element={
-          <PageLayout>
-            <SeatPage />
-          </PageLayout>
-        }
+        element={<RequireRole roles={["admin", "organizer"]}><SeatPage /></RequireRole>}
       />
+
+      {/* Redirect /tickets ke halaman yang sesuai */}
+      <Route path="/tickets" element={<TicketRedirect />} />
     </Routes>
   );
 }

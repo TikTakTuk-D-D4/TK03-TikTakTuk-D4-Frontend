@@ -1,10 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { Button } from "../../../components/ui/Button";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import { useToast } from "../../../components/ui/Toast";
 import { useAuth } from "../../../context/AuthContext";
-import { RoleSwitcher } from "../components/RoleSwitcher";
 import { ArtistDeleteDialog } from "../../artists/ArtistDeleteDialog";
 import { ArtistDirectoryGrid } from "../../artists/ArtistDirectoryGrid";
 import { ArtistFormModal } from "../../artists/ArtistFormModal";
@@ -21,22 +20,25 @@ function ArtistPage() {
   const { toast } = useToast();
   const role = user?.role ?? "guest";
 
-  const [artists, setArtists] = useState(() => getArtists());
+  const [artists, setArtists] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [editingArtist, setEditingArtist] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  const sortedArtists = useMemo(() => {
-    return [...artists].sort((a, b) => a.name.localeCompare(b.name, "id-ID"));
-  }, [artists]);
+  useEffect(() => {
+    getArtists()
+      .then(setArtists)
+      .finally(() => setLoading(false));
+  }, []);
 
-  const refresh = () => setArtists(getArtists());
+  const sortedArtists = useMemo(
+    () => [...artists].sort((a, b) => a.name?.localeCompare(b.name, "id-ID")),
+    [artists]
+  );
+
+  const refresh = () => getArtists().then(setArtists);
   const canManage = role === "admin";
-  const headerKicker = canManage ? "Manajemen" : "Direktori";
-  const headerTitle = canManage ? "Daftar Artis" : "Artis";
-  const headerSubtitle = canManage
-    ? `${artists.length} artis terdaftar.`
-    : "Eksplor line-up dari berbagai konser.";
 
   const openCreateForm = () => {
     setEditingArtist(null);
@@ -48,48 +50,49 @@ function ArtistPage() {
     setFormOpen(true);
   };
 
-  const handleSubmit = (payload) => {
-    if (editingArtist) {
-      const updated = updateArtist(editingArtist.id, payload);
-      if (!updated) {
-        toast("Gagal memperbarui artis.", "error");
-        return false;
+  const handleSubmit = async (payload) => {
+    try {
+      if (editingArtist) {
+        await updateArtist(editingArtist.id, payload);
+        toast("Artis diperbarui.", "success");
+      } else {
+        await createArtist(payload);
+        toast("Artis ditambahkan.", "success");
       }
-      toast("Artis diperbarui.", "success");
-    } else {
-      createArtist(payload);
-      toast("Artis ditambahkan.", "success");
+      await refresh();
+      return true;
+    } catch (err) {
+      toast(err.message || "Gagal menyimpan artis.", "error");
+      return false;
     }
-
-    refresh();
-    return true;
   };
 
-  const handleDelete = (artist) => {
-    const ok = deleteArtist(artist.id);
-    if (ok) {
+  const handleDelete = async (artist) => {
+    try {
+      await deleteArtist(artist.id);
       toast("Artis dihapus.", "success");
-      refresh();
-    } else {
-      toast("Artis gagal dihapus.", "error");
+      await refresh();
+    } catch (err) {
+      toast(err.message || "Artis gagal dihapus.", "error");
     }
-
     setDeleteTarget(null);
   };
 
-  if (role === "guest") {
-    return <Navigate to="/login" replace />;
-  }
+  if (role === "guest") return <Navigate to="/login" replace />;
+  if (loading) return <section><p style={{ padding: "2rem" }}>Memuat data artis...</p></section>;
 
   return (
     <section>
       <PageHeader
-        kicker={headerKicker}
-        title={headerTitle}
-        subtitle={headerSubtitle}
+        kicker={canManage ? "Manajemen" : "Direktori"}
+        title={canManage ? "Daftar Artis" : "Artis"}
+        subtitle={
+          canManage
+            ? `${artists.length} artis terdaftar.`
+            : "Eksplor line-up dari berbagai konser."
+        }
         action={
           <div className="flex items-center gap-2.5">
-            <RoleSwitcher />
             {canManage ? (
               <Button variant="primary" onClick={openCreateForm}>
                 + Tambah Artis

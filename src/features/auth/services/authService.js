@@ -1,129 +1,89 @@
+const API_URL = import.meta.env.VITE_API_URL;
 const STORAGE_KEY = "tiktaktuk_user";
-const DEFAULT_PASSWORD = "demo123";
 
-const demoUsers = {
-  admin: {
-    user_id: "usr-admin-001",
-    username: "admin_demo",
-    email: "admin@tiktaktuk.id",
-    name: "Alya Admin",
-    role: "admin",
-    password: DEFAULT_PASSWORD,
-  },
-  organizer: {
-    user_id: "usr-org-001",
-    username: "organizer_demo",
-    email: "organizer@tiktaktuk.id",
-    name: "Raka Organizer",
-    role: "organizer",
-    organizer_id: "org-001",
-    password: DEFAULT_PASSWORD,
-  },
-  customer: {
-    user_id: "usr-cust-001",
-    username: "customer_demo",
-    email: "customer@tiktaktuk.id",
-    name: "Budi Santoso",
-    role: "customer",
-    customer_id: "cust-001",
-    password: DEFAULT_PASSWORD,
-  },
-};
-
-// Login using demo users (fallback to simple role if needed)
-export function loginAs(role = "admin") {
-  const user =
-    demoUsers[role] || {
-      username: `${role}_demo`,
-      role,
-    };
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-  return user;
+export async function loginWithCredentials({ username = "", password = "" } = {}) {
+  const res = await fetch(`${API_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Username atau password salah.");
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data.user));
+  window.dispatchEvent(new CustomEvent("tiktaktuk:user", { detail: data.user }));
+  return data.user;
 }
 
-export function loginWithCredentials({ email = "", password = "" } = {}) {
-  const normalizedEmail = String(email).trim().toLowerCase();
-  const normalizedPassword = String(password);
-
-  const matchedUser = Object.values(demoUsers).find(
-    (user) => String(user.email || "").toLowerCase() === normalizedEmail,
-  );
-
-  if (!matchedUser || normalizedPassword !== matchedUser.password) {
-    throw new Error("Email atau password salah.");
-  }
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(matchedUser));
-  window.dispatchEvent(new CustomEvent("tiktaktuk:user", { detail: matchedUser }));
-  return matchedUser;
+export async function registerUser({
+  username,
+  password,
+  role,
+  full_name,
+  phone_number,
+  organizer_name,
+  contact_email,
+} = {}) {
+  const res = await fetch(`${API_URL}/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password, role, full_name, phone_number, organizer_name, contact_email }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Registrasi gagal.");
+  return data;
 }
 
-export function getDemoUsers() {
-  return demoUsers;
+export async function updateProfile({
+  user_id,
+  full_name,
+  phone_number,
+  organizer_name,
+  contact_email,
+} = {}) {
+  const res = await fetch(`${API_URL}/auth/profile/${user_id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ full_name, phone_number, organizer_name, contact_email }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Update profil gagal.");
+  const current = getCurrentUser();
+  const updated = { ...current, full_name };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  window.dispatchEvent(new CustomEvent("tiktaktuk:user", { detail: updated }));
+  return updated;
 }
 
-// Logout
 export function logout() {
   localStorage.removeItem(STORAGE_KEY);
 }
 
-// Get current user safely
 export function getCurrentUser() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : null;
-  } catch (error) {
-    console.error("Error parsing user:", error);
+  } catch {
     return null;
   }
 }
 
-// Admin / organizer only
 export function isAdminOrOrganizer() {
   const user = getCurrentUser();
-  return user?.role === "admin" || user?.role === "organizer";
+  return user?.role === "administrator" || user?.role === "organizer";
 }
 
-// Fallback for pages
 export function getPageUser() {
-  return getCurrentUser() || demoUsers.admin;
+  return getCurrentUser();
 }
 
 export function updateCurrentUser(patch = {}) {
-  const current = getCurrentUser() || demoUsers.admin;
-  const next = {
-    ...current,
-    ...patch,
-  };
-
-  if (!next.password) {
-    next.password = current.password || DEFAULT_PASSWORD;
-  }
-
+  const current = getCurrentUser();
+  const next = { ...current, ...patch };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   window.dispatchEvent(new CustomEvent("tiktaktuk:user", { detail: next }));
   return next;
 }
 
-export function updateUserPassword({ currentPassword = "", nextPassword = "" } = {}) {
-  const current = getCurrentUser() || demoUsers.admin;
-  const storedPassword = current.password || DEFAULT_PASSWORD;
-
-  if (!currentPassword) {
-    return { ok: false, error: "Password lama wajib diisi." };
-  }
-
-  if (currentPassword !== storedPassword) {
-    return { ok: false, error: "Password lama tidak sesuai." };
-  }
-
-  const updated = {
-    ...current,
-    password: nextPassword,
-  };
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-  window.dispatchEvent(new CustomEvent("tiktaktuk:user", { detail: updated }));
-  return { ok: true, user: updated };
-}
+export function loginAs() {}
+export function getDemoUsers() { return {}; }
+export function updateUserPassword() { return { ok: false }; }

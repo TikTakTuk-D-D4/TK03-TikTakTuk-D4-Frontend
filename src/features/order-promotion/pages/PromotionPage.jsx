@@ -6,8 +6,8 @@ import { Badge } from "../../../components/ui/Badge";
 import PromotionTable from "../components/PromotionTable";
 import PromotionFormModal from "../components/PromotionFormModal";
 import DeletePromotionModal from "../components/DeletePromotionModal";
-import { getCurrentUser } from "../../auth/services/authService";
-import { getPromotions } from "../services/promotionService";
+import { useAuth } from "../../../context/AuthContext";
+import { getPromotions, createPromotion, updatePromotion, deletePromotion } from "../services/promotionService";
 import {
   PROMOTION_FILTER_OPTIONS,
 } from "../constants/promotionConstants";
@@ -19,11 +19,18 @@ import {
 } from "../utils/promotionUtils";
 
 function PromotionPage() {
-  const currentUser = getCurrentUser();
-  const currentRole = String(currentUser?.role || "guest").toUpperCase();
+  const { user } = useAuth();
+  const currentRole = String(user?.role || "guest").toUpperCase();
   const isAdmin = currentRole === "ADMIN";
 
-  const [promotions, setPromotions] = useState(() => getPromotions());
+  const [promotions, setPromotions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getPromotions()
+      .then(setPromotions)
+      .finally(() => setLoading(false));
+  }, []);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -86,59 +93,38 @@ function PromotionPage() {
     setSelectedPromotion(null);
   };
 
-  const handleSubmitPromotion = (promotion) => {
-    if (formMode === "create") {
-      const nextPromotionNumber =
-        promotions.reduce((maxValue, item) => {
-          const numericPart = Number(String(item.promotionId || "").split("_").pop());
-          return Number.isNaN(numericPart)
-            ? maxValue
-            : Math.max(maxValue, numericPart);
-        }, 0) + 1;
+  const refresh = () => getPromotions().then(setPromotions);
 
-      const nextPromotion = {
-        ...promotion,
-        promotionId: `promo_${String(nextPromotionNumber).padStart(3, "0")}`,
-        usedCount: 0,
-      };
-
-      setPromotions((prev) => [nextPromotion, ...prev]);
-      setFeedback({
-        type: "success",
-        title: "Promo berhasil dibuat",
-        description: `${nextPromotion.promoCode} sudah masuk ke daftar promosi.`,
-      });
-    } else {
-      setPromotions((prev) =>
-        prev.map((item) =>
-          item.promotionId === promotion.promotionId
-            ? { ...item, ...promotion, usedCount: item.usedCount }
-            : item
-        )
-      );
-      setFeedback({
-        type: "success",
-        title: "Promo berhasil diperbarui",
-        description: `${promotion.promoCode} sudah diperbarui.`,
-      });
+  const handleSubmitPromotion = async (promotion) => {
+    try {
+      if (formMode === "create") {
+        const created = await createPromotion(promotion);
+        setPromotions((prev) => [created, ...prev]);
+        setFeedback({ type: "success", title: "Promo berhasil dibuat", description: `${created.promoCode} sudah masuk ke daftar promosi.` });
+      } else {
+        await updatePromotion(promotion.promotionId, promotion);
+        await refresh();
+        setFeedback({ type: "success", title: "Promo berhasil diperbarui", description: `${promotion.promoCode} sudah diperbarui.` });
+      }
+    } catch (err) {
+      setFeedback({ type: "danger", title: "Gagal", description: err.message });
     }
-
     closeFormModal();
   };
 
-  const handleDeletePromotion = () => {
+  const handleDeletePromotion = async () => {
     if (!deleteTarget) return;
-
-    setPromotions((prev) =>
-      prev.filter((item) => item.promotionId !== deleteTarget.promotionId)
-    );
-    setFeedback({
-      type: "danger",
-      title: "Promo berhasil dihapus",
-      description: `${deleteTarget.promoCode} telah dihapus dari sistem.`,
-    });
+    try {
+      await deletePromotion(deleteTarget.promotionId);
+      setPromotions((prev) => prev.filter((item) => item.promotionId !== deleteTarget.promotionId));
+      setFeedback({ type: "danger", title: "Promo berhasil dihapus", description: `${deleteTarget.promoCode} telah dihapus dari sistem.` });
+    } catch (err) {
+      setFeedback({ type: "danger", title: "Gagal menghapus", description: err.message });
+    }
     setDeleteTarget(null);
   };
+
+  if (loading) return <main className="min-h-screen bg-bg px-6 py-8 text-text"><p>Memuat data promosi...</p></main>;
 
   return (
     <main className="min-h-screen overflow-hidden bg-bg px-6 py-8 text-text">

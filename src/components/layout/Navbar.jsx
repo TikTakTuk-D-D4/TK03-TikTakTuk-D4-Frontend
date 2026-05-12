@@ -6,7 +6,8 @@ import { navByRole } from "../../lib/roleConfig";
 function Navbar() {
   const navigate = useNavigate();
   const [user, setUser] = useState(() => getPageUser());
-  const menus = navByRole[user.role] || [];
+  const normalizedRole = user.role === "administrator" ? "admin" : user.role;
+  const menus = navByRole[normalizedRole] || [];
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef(null);
 
@@ -42,7 +43,7 @@ function Navbar() {
         <div className="brand-mark">TT</div>
         <div>
           <strong>TikTakTuk</strong>
-          <span className="role-badge">{user.role}</span>
+          <span className="role-badge">{normalizedRole}</span>
         </div>
       </div>
 

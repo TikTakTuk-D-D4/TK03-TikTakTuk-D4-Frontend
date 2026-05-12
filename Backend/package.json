@@ -1,0 +1,18 @@
+{
+  "name": "tiktaktuk-backend",
+  "version": "1.0.50",
+  "scripts": {
+    "test": "bun test src/tests",
+    "dev": "bun run --watch src/index.ts"
+  },
+  "dependencies": {
+    "@elysiajs/cors": "^1.4.2",
+    "elysia": "latest",
+    "pg": "^8.20.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.20.0",
+    "bun-types": "latest"
+  },
+  "module": "src/index.js"
+}

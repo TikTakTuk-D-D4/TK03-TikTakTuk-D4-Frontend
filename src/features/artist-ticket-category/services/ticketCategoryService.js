@@ -1,62 +1,83 @@
-import { mockCategories } from "../../../data/mockCategories";
-import { mockEvents } from "../../../data/mockEvents";
-import { mockVenues } from "../../../data/mockVenues";
+import { apiFetch, API_URL } from "../../../lib/api";
 
-let categoryState = [...mockCategories];
+const mapCategory = (c) => ({
+  id: c.category_id,
+  name: c.category_name,
+  quota: Number(c.quota),
+  price: Number(c.price),
+  eventId: c.tevent_id,
+  sisa_kuota: c.sisa_kuota !== undefined ? Number(c.sisa_kuota) : Number(c.quota),
+});
 
-function createId() {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-  return `cat-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+export async function getTicketCategories(event_id) {
+  const url = event_id
+    ? `${API_URL}/ticket-categories?event_id=${event_id}`
+    : `${API_URL}/ticket-categories`;
+  const res = await fetch(url);
+  const data = await res.json();
+  return Array.isArray(data) ? data.map(mapCategory) : [];
 }
 
-export function getTicketCategories() {
-  return [...categoryState];
-}
-
-export function createTicketCategory(payload) {
-  const category = {
-    id: createId(),
-    name: payload.name,
-    quota: Number(payload.quota),
-    price: Number(payload.price),
-    eventId: payload.eventId,
-  };
-
-  categoryState = [category, ...categoryState];
-  return category;
-}
-
-export function updateTicketCategory(id, payload) {
-  let updated = null;
-  categoryState = categoryState.map((category) => {
-    if (category.id !== id) return category;
-    updated = {
-      ...category,
-      name: payload.name,
-      quota: Number(payload.quota),
+export async function createTicketCategory(payload) {
+  const res = await apiFetch("/ticket-categories", {
+    method: "POST",
+    body: JSON.stringify({
+      tevent_id: payload.eventId,
+      category_name: payload.name,
       price: Number(payload.price),
-    };
-    return updated;
+      quota: Number(payload.quota),
+    }),
   });
-  return updated;
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.message);
+  return mapCategory(result);
 }
 
-export function deleteTicketCategory(id) {
-  const before = categoryState.length;
-  categoryState = categoryState.filter((category) => category.id !== id);
-  return categoryState.length < before;
+export async function updateTicketCategory(id, payload) {
+  const res = await apiFetch(`/ticket-categories/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      category_name: payload.name,
+      price: Number(payload.price),
+      quota: Number(payload.quota),
+    }),
+  });
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.message);
+  return mapCategory(result);
 }
 
-export function getEvents() {
-  return [...mockEvents];
+export async function deleteTicketCategory(id) {
+  const res = await apiFetch(`/ticket-categories/${id}`, { method: "DELETE" });
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.message);
+  return true;
 }
 
-export function getVenues() {
-  return [...mockVenues];
+export async function getEvents() {
+  const res = await fetch(`${API_URL}/events`);
+  const data = await res.json();
+  return Array.isArray(data)
+    ? data.map((e) => ({
+        id: e.event_id,
+        name: e.event_title,
+        venueId: e.venue_id,
+        organizerId: e.organizer_id,
+        date: e.event_datetime,
+      }))
+    : [];
 }
 
-export function resetTicketCategories() {
-  categoryState = [...mockCategories];
+export async function getVenues() {
+  const res = await fetch(`${API_URL}/venues`);
+  const data = await res.json();
+  return Array.isArray(data)
+    ? data.map((v) => ({
+        id: v.venue_id,
+        name: v.venue_name,
+        capacity: v.capacity,
+      }))
+    : [];
 }
+
+export function resetTicketCategories() {}

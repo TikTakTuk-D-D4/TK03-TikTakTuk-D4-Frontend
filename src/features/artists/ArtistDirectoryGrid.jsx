@@ -1,12 +1,3 @@
-function initials(name) {
-  return name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0] || "")
-    .join("")
-    .toUpperCase();
-}
-
 export function ArtistDirectoryGrid({ artists }) {
   if (!artists.length) {
     return (
@@ -23,9 +14,7 @@ export function ArtistDirectoryGrid({ artists }) {
           key={artist.id}
           className="bg-card border border-edge rounded p-5 text-center transition-all hover:border-edge-glow hover:-translate-y-0.5"
         >
-          <div className="w-20 h-20 rounded-full mx-auto mb-3 bg-brand-gradient grid place-items-center font-display font-bold text-2xl text-bg border-[3px] border-bg shadow-glow">
-            {initials(artist.name)}
-          </div>
+          <div className="w-20 h-20 rounded-full mx-auto mb-3 bg-brand-gradient border-[3px] border-bg shadow-glow" />
           <h3 className="font-display font-semibold text-lg">{artist.name}</h3>
           <p className="text-xs text-ink-mute uppercase tracking-wide mt-0.5">
             {artist.genre || "-"}

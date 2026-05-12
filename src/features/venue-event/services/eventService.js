@@ -1,130 +1,75 @@
-const STORAGE_KEY = "tiktaktuk_events";
+import { apiFetch, API_URL } from "../../../lib/api";
 
-export const getEvents = () => {
-  const data = localStorage.getItem(STORAGE_KEY);
-
-  if (data) {
-    const parsed = JSON.parse(data);
-
-    return parsed.map((e) => ({
-      ...e,
-      price:
-        Number(e.price) ||
-        Number(e.startPrice) ||
-        (e.tickets?.length
-          ? Math.min(...e.tickets.map((t) => Number(t.price) || 0))
-          : 0),
-    }));
-  }
-
-  return [
-    {
-      id: 1,
-      title: "Coldplay Live Jakarta",
-      date: "2026-06-12",
-      time: "19:00",
-      venueId: 1,
-      venueName: "GBK Stadium",
-      artist: "Coldplay",
-      description: "Music of the Spheres World Tour in Jakarta.",
-      ticketCategory: "VIP",
-      stock: 500,
-      price: 1500000,
-    },
-    {
-      id: 2,
-      title: "The Weeknd Tour",
-      date: "2026-07-03",
-      time: "20:00",
-      venueId: 2,
-      venueName: "ICE BSD",
-      artist: "The Weeknd",
-      description: "After Hours Til Dawn Tour Indonesia.",
-      ticketCategory: "Gold",
-      stock: 350,
-      price: 1200000,
-    },
-    {
-      id: 3,
-      title: "NIKI Buzz World Tour",
-      date: "2026-07-15",
-      time: "19:30",
-      venueId: 3,
-      venueName: "JIExpo Kemayoran",
-      artist: "NIKI",
-      description: "Special concert for Indonesian fans.",
-      ticketCategory: "Regular",
-      stock: 700,
-      price: 850000,
-    },
-    {
-      id: 4,
-      title: "Taylor Swift Tribute Night",
-      date: "2026-08-01",
-      time: "18:30",
-      venueId: 4,
-      venueName: "Istora Senayan",
-      artist: "Tribute Artist",
-      description: "Sing along to Taylor Swift greatest hits.",
-      ticketCategory: "VIP",
-      stock: 250,
-      price: 950000,
-    },
-    {
-      id: 5,
-      title: "Arctic Monkeys Asia Tour",
-      date: "2026-08-20",
-      time: "20:00",
-      venueId: 5,
-      venueName: "Tennis Indoor Senayan",
-      artist: "Arctic Monkeys",
-      description: "Live performance in Jakarta.",
-      ticketCategory: "Gold",
-      stock: 300,
-      price: 1100000,
-    },
-    {
-      id: 6,
-      title: "88rising Festival",
-      date: "2026-09-05",
-      time: "16:00",
-      venueId: 6,
-      venueName: "Beach City International Stadium",
-      artist: "Rich Brian, NIKI, Joji",
-      description: "Asian music festival by 88rising.",
-      ticketCategory: "Regular",
-      stock: 1000,
-      price: 700000,
-    },
-    {
-      id: 7,
-      title: "LANY Jakarta Show",
-      date: "2026-09-18",
-      time: "19:00",
-      venueId: 7,
-      venueName: "Convention Hall SMESCO",
-      artist: "LANY",
-      description: "A beautiful night with LANY.",
-      ticketCategory: "Gold",
-      stock: 280,
-      price: 980000,
-    },
-    {
-      id: 8,
-      title: "Summer Sound Fest",
-      date: "2026-10-10",
-      time: "15:00",
-      venueId: 8,
-      venueName: "Ecopark Ancol",
-      artist: "Various Artists",
-      description: "Outdoor summer music festival.",
-      ticketCategory: "Regular",
-      stock: 1200,
-      price: 550000,
-    },
-  ];
+const mapEvent = (e) => {
+  const dt = e.event_datetime ? new Date(e.event_datetime) : null;
+  return {
+    id: e.event_id,
+    name: e.event_title,
+    title: e.event_title,
+    venueId: e.venue_id,
+    venueName: e.venue_name || "",
+    city: e.city || "",
+    organizerId: e.organizer_id,
+    date: dt ? dt.toISOString().slice(0, 10) : "",
+    time: dt ? dt.toISOString().slice(11, 16) : "",
+    event_datetime: e.event_datetime,
+    description: e.description || "",
+    status: e.status || "",
+  };
 };
 
-export const saveEvents = (events) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+export const getEvents = async () => {
+  const res = await fetch(`${API_URL}/events`);
+  const data = await res.json();
+  return Array.isArray(data) ? data.map(mapEvent) : [];
 };
+
+export const getEventById = async (id) => {
+  const res = await fetch(`${API_URL}/events/${id}`);
+  const data = await res.json();
+  return mapEvent(data);
+};
+
+export const createEvent = async (data) => {
+  const event_datetime = data.event_datetime || (data.date
+    ? `${data.date}T${data.time || "00:00"}:00`
+    : null);
+  const res = await apiFetch("/events", {
+    method: "POST",
+    body: JSON.stringify({
+      venue_id: data.venueId,
+      organizer_id: data.organizerId,
+      event_title: data.title || data.name,
+      event_datetime,
+    }),
+  });
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.message);
+  return mapEvent(result);
+};
+
+export const updateEvent = async (id, data) => {
+  const event_datetime = data.event_datetime || (data.date
+    ? `${data.date}T${data.time || "00:00"}:00`
+    : null);
+  const res = await apiFetch(`/events/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      venue_id: data.venueId,
+      event_title: data.title || data.name,
+      event_datetime,
+    }),
+  });
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.message);
+  return mapEvent(result);
+};
+
+export const deleteEvent = async (id) => {
+  const res = await apiFetch(`/events/${id}`, { method: "DELETE" });
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.message);
+  return result;
+};
+
+export const saveEvents = () => {};

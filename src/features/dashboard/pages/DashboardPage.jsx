@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getPageUser } from "../../auth/services/authService";
-import { events } from "../../../mocks/events";
-import { venues } from "../../../mocks/venues";
-import { orders } from "../../../mocks/orders";
-import { tickets } from "../../../mocks/tickets";
-import { customers } from "../../../mocks/customers";
-import { ticketCategories } from "../../../mocks/ticketCategories";
-import { promotions } from "../../../mocks/promotions";
-import { mockArtists } from "../../../data/mockArtists";
+import { getEvents } from "../../venue-event/services/eventService";
+import { getVenues } from "../../venue-event/services/venueService";
+import { getOrders } from "../../order-promotion/services/orderService";
+import { getTickets } from "../../ticket-seat/services/ticketService";
+import { getArtists } from "../../artist-ticket-category/services/artistService";
+import { getPromotions } from "../../order-promotion/services/promotionService";
+import { getTicketCategories } from "../../artist-ticket-category/services/ticketCategoryService";
 
 const currencyFormat = new Intl.NumberFormat("id-ID", {
   style: "currency",
@@ -28,188 +27,124 @@ function formatDateTime(value) {
   return dateTimeFormat.format(date);
 }
 
-function getEventId(event) {
-  return event?.event_id || event?.id || "";
-}
-
-function getEventTitle(event) {
-  return event?.event_title || event?.title || event?.name || "Event";
-}
-
-function getEventDateTime(event) {
-  if (event?.event_datetime) return event.event_datetime;
-  if (event?.date && event?.time) {
-    return `${event.date}T${event.time}:00+07:00`;
+function getStatusLabel(status) {
+  switch (status?.toLowerCase()) {
+    case "paid": case "active": return "Aktif";
+    case "pending": return "Pending";
+    case "cancelled": return "Dibatalkan";
+    default: return "Pending";
   }
-  return event?.date || null;
 }
 
-function getVenueName(venue) {
-  return venue?.venue_name || venue?.name || "Venue";
+function getStatusClass(status) {
+  const s = status?.toLowerCase();
+  if (s === "paid" || s === "active") return "active";
+  if (s === "pending") return "pending";
+  return "cancelled";
 }
 
-function getOrderId(order) {
-  return order?.order_id || order?.id || "-";
-}
-
-function getOrderDate(order) {
-  return order?.order_date || order?.date || null;
-}
-
-function getOrderStatus(order) {
-  return order?.payment_status || order?.paymentStatus || "pending";
-}
-
-function getOrderAmount(order) {
-  return Number(order?.total_amount ?? order?.totalAmount ?? 0);
-}
-
-function getOrderCustomerId(order) {
-  return order?.customer_id || order?.customerId || "";
-}
-
-function getOrderEventId(order) {
-  return order?.event_id || order?.eventId || "";
-}
-
-function getTicketOrderId(ticket) {
-  return ticket?.torder_id || ticket?.order_id || ticket?.orderId || "";
-}
-
-function getTicketCode(ticket) {
-  return ticket?.ticket_code || ticket?.code || ticket?.id || "-";
+function isPromoActive(promo) {
+  const now = new Date();
+  const start = promo.startDate ? new Date(promo.startDate) : null;
+  const end = promo.endDate ? new Date(promo.endDate) : null;
+  if (start && now < start) return false;
+  if (end && now > end) return false;
+  return true;
 }
 
 function getDisplayName(user) {
   return user?.name || user?.full_name || user?.organizer_name || user?.username || "User";
 }
 
-function getStatusLabel(status) {
-  switch (status) {
-    case "paid":
-      return "Lunas";
-    case "pending":
-      return "Pending";
-    case "cancelled":
-      return "Dibatalkan";
-    case "active":
-      return "Aktif";
-    case "used":
-      return "Terpakai";
-    default:
-      return "Pending";
-  }
-}
-
-function getStatusClass(status) {
-  if (status === "paid" || status === "active") return "active";
-  if (status === "pending") return "pending";
-  if (status === "used" || status === "cancelled") return "cancelled";
-  return "pending";
-}
-
 function DashboardPage() {
   const [user, setUser] = useState(() => getPageUser());
-
-  useEffect(() => {
-    const handleUserUpdate = (event) => {
-      setUser(event?.detail || getPageUser());
-    };
-
-    window.addEventListener("tiktaktuk:user", handleUserUpdate);
-    return () => window.removeEventListener("tiktaktuk:user", handleUserUpdate);
-  }, []);
+  const [events, setEvents] = useState([]);
+  const [venues, setVenues] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [tickets, setTickets] = useState([]);
+  const [artists, setArtists] = useState([]);
+  const [promotions, setPromotions] = useState([]);
+  const [ticketCategories, setTicketCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const isAdmin = user?.role === "admin";
   const isOrganizer = user?.role === "organizer";
   const isCustomer = user?.role === "customer";
-  const organizerId = user?.organizer_id || user?.organizerId || "org-001";
-  const customerId = user?.customer_id || user?.customerId || "cust-001";
+  const organizerId = user?.organizer_id || user?.organizerId;
+  const customerId = user?.customer_id || user?.customerId;
 
-  const eventById = new Map(events.map((event) => [getEventId(event), event]));
-  const venueById = new Map(venues.map((venue) => [venue.venue_id || venue.id, venue]));
-  const customerById = new Map(customers.map((customer) => [customer.customer_id || customer.id, customer]));
-  const organizerEventIds = new Set(
-    events.filter((event) => event.organizer_id === organizerId).map(getEventId),
-  );
+  useEffect(() => {
+    const handleUserUpdate = (e) => setUser(e?.detail || getPageUser());
+    window.addEventListener("tiktaktuk:user", handleUserUpdate);
+    return () => window.removeEventListener("tiktaktuk:user", handleUserUpdate);
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    setLoading(true);
+
+    Promise.all([
+      getEvents().then(setEvents).catch(() => {}),
+      getVenues().then(setVenues).catch(() => {}),
+      getArtists().then(setArtists).catch(() => {}),
+      getPromotions().then(setPromotions).catch(() => {}),
+      (isCustomer ? getOrders(customerId) : getOrders()).then(setOrders).catch(() => {}),
+      (isCustomer ? getTickets({ customer_id: customerId }) : getTickets()).then(setTickets).catch(() => {}),
+      isCustomer ? getTicketCategories().then(setTicketCategories).catch(() => {}) : Promise.resolve(),
+    ]).finally(() => setLoading(false));
+  }, [user]);
 
   const visibleEvents = isOrganizer
-    ? events.filter((event) => event.organizer_id === organizerId)
+    ? events.filter((e) => e.organizerId === organizerId)
     : events;
-  const visibleVenues = isOrganizer
-    ? venues.filter((venue) => venue.organizer_id === organizerId)
-    : venues;
-  const visibleOrders = isCustomer
-    ? orders.filter((order) => getOrderCustomerId(order) === customerId)
-    : isOrganizer
-      ? orders.filter((order) => organizerEventIds.has(getOrderEventId(order)))
-      : orders;
 
-  const orderById = new Map(orders.map((order) => [getOrderId(order), order]));
-
-  const visibleTickets = isCustomer
-    ? tickets.filter((ticket) => {
-        const order = orderById.get(getTicketOrderId(ticket));
-        return order && getOrderCustomerId(order) === customerId;
-      })
-    : isOrganizer
-      ? tickets.filter((ticket) => {
-          const order = orderById.get(getTicketOrderId(ticket));
-          return order && organizerEventIds.has(getOrderEventId(order));
-        })
-      : tickets;
-
-  const paidOrders = visibleOrders.filter((order) => getOrderStatus(order) === "paid");
-  const paidRevenue = paidOrders.reduce((sum, order) => sum + getOrderAmount(order), 0);
-  const activePromos = promotions.filter((promo) => promo.active).length;
-  const activeTickets = visibleTickets.filter((ticket) => ticket.status === "active").length;
-  const pendingOrders = visibleOrders.filter((order) => getOrderStatus(order) === "pending").length;
+  const activePromoCount = promotions.filter(isPromoActive).length;
+  const paidOrders = orders.filter((o) => o.paymentStatus === "PAID");
+  const paidRevenue = paidOrders.reduce((sum, o) => sum + o.totalAmount, 0);
+  const pendingOrderCount = orders.filter((o) => o.paymentStatus === "PENDING").length;
+  const activeTicketCount = tickets.filter((t) => t.status === "active").length;
 
   const stats = isCustomer
     ? [
-        { label: "Total Order", value: visibleOrders.length, sub: "Semua transaksi kamu" },
+        { label: "Total Order", value: orders.length, sub: "Semua transaksi kamu" },
         { label: "Lunas", value: paidOrders.length, sub: "Pembayaran sukses" },
-        { label: "Tiket Aktif", value: activeTickets, sub: "Siap digunakan" },
-        { label: "Promo Aktif", value: activePromos, sub: "Bisa dipakai" },
+        { label: "Tiket Aktif", value: activeTicketCount, sub: "Siap digunakan" },
+        { label: "Promo Aktif", value: activePromoCount, sub: "Bisa dipakai" },
       ]
     : [
         { label: "Total Event", value: visibleEvents.length, sub: "Event terdaftar" },
-        { label: "Total Order", value: visibleOrders.length, sub: "Order masuk" },
-        { label: "Total Tiket", value: visibleTickets.length, sub: "Tiket diterbitkan" },
+        { label: "Total Order", value: orders.length, sub: "Order masuk" },
+        { label: "Total Tiket", value: tickets.length, sub: "Tiket diterbitkan" },
         { label: "Revenue", value: currencyFormat.format(paidRevenue), sub: "Pembayaran lunas" },
       ];
 
   const highlightCards = isCustomer
     ? [
-        { label: "Event tersedia", value: visibleEvents.length },
-        { label: "Order pending", value: pendingOrders },
+        { label: "Event tersedia", value: events.length },
+        { label: "Order pending", value: pendingOrderCount },
         { label: "Kategori tiket", value: ticketCategories.length },
       ]
     : [
-        { label: "Venue aktif", value: visibleVenues.length },
-        { label: "Artist terdaftar", value: mockArtists.length },
-        { label: "Promo aktif", value: activePromos },
+        { label: "Venue aktif", value: venues.length },
+        { label: "Artist terdaftar", value: artists.length },
+        { label: "Promo aktif", value: activePromoCount },
       ];
 
   const upcomingEvents = [...visibleEvents]
-    .sort((a, b) => new Date(getEventDateTime(a)) - new Date(getEventDateTime(b)))
+    .sort((a, b) => new Date(a.event_datetime) - new Date(b.event_datetime))
     .slice(0, 4);
 
-  const recentOrders = [...visibleOrders]
-    .sort((a, b) => new Date(getOrderDate(b)) - new Date(getOrderDate(a)))
+  const recentOrders = [...orders]
+    .sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate))
     .slice(0, 4);
 
-  const ticketItems = visibleTickets.slice(0, 4).map((ticket) => {
-    const order = orderById.get(getTicketOrderId(ticket));
-    const event = order ? eventById.get(getOrderEventId(order)) : null;
-    return {
-      id: ticket.ticket_id || ticket.id,
-      code: getTicketCode(ticket),
-      status: ticket.status,
-      eventTitle: getEventTitle(event),
-      orderId: getOrderId(order),
-    };
-  });
+  const ticketItems = tickets.slice(0, 4).map((ticket) => ({
+    id: ticket.ticket_id,
+    code: ticket.ticket_code,
+    status: ticket.status,
+    eventTitle: ticket.event?.title || "-",
+    orderId: ticket.order?.order_id || "-",
+  }));
 
   const roleLabel = isAdmin ? "Administrator" : isOrganizer ? "Organizer" : "Customer";
   const displayName = getDisplayName(user);
@@ -229,8 +164,17 @@ function DashboardPage() {
       : [
           { label: "Tambah Event", path: "/events/create", variant: "primary" },
           { label: "Tambah Venue", path: "/venues/create", variant: "ghost" },
-          { label: "Kelola Artist", path: "/artists", variant: "ghost" },
         ];
+
+  if (loading) {
+    return (
+      <div className="page dashboard">
+        <div style={{ padding: "4rem", textAlign: "center", color: "var(--text-muted)" }}>
+          Memuat data dashboard...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page dashboard">
@@ -290,7 +234,7 @@ function DashboardPage() {
                       <div>
                         <strong className="dashboard-item-title mono">{ticket.code}</strong>
                         <div className="dashboard-item-meta">
-                          {ticket.eventTitle} - Order {ticket.orderId}
+                          {ticket.eventTitle} &mdash; Order {ticket.orderId}
                         </div>
                       </div>
                       <div className="dashboard-item-right">
@@ -300,29 +244,26 @@ function DashboardPage() {
                       </div>
                     </div>
                   ))
-                : upcomingEvents.map((event) => {
-                    const venue = venueById.get(event.venue_id || event.venueId);
-                    return (
-                      <div className="dashboard-item" key={getEventId(event)}>
-                        <div>
-                          <strong className="dashboard-item-title">{getEventTitle(event)}</strong>
-                          <div className="dashboard-item-meta">
-                            {formatDateTime(getEventDateTime(event))} - {getVenueName(venue)}
-                          </div>
-                        </div>
-                        <div className="dashboard-item-right">
-                          <span className="chip dot purple">Upcoming</span>
+                : upcomingEvents.map((event) => (
+                    <div className="dashboard-item" key={event.id}>
+                      <div>
+                        <strong className="dashboard-item-title">{event.title}</strong>
+                        <div className="dashboard-item-meta">
+                          {formatDateTime(event.event_datetime)} &mdash; {event.venueName || "-"}
                         </div>
                       </div>
-                    );
-                  })}
+                      <div className="dashboard-item-right">
+                        <span className="chip dot purple">Upcoming</span>
+                      </div>
+                    </div>
+                  ))}
 
-              {isCustomer && ticketItems.length === 0 ? (
+              {isCustomer && ticketItems.length === 0 && (
                 <div className="dashboard-empty">Belum ada tiket. Jelajahi event untuk membeli.</div>
-              ) : null}
-              {!isCustomer && upcomingEvents.length === 0 ? (
+              )}
+              {!isCustomer && upcomingEvents.length === 0 && (
                 <div className="dashboard-empty">Belum ada event terdekat.</div>
-              ) : null}
+              )}
             </div>
           </section>
 
@@ -338,34 +279,26 @@ function DashboardPage() {
             </div>
 
             <div className="dashboard-list">
-              {recentOrders.map((order) => {
-                const event = eventById.get(getOrderEventId(order));
-                const customer = customerById.get(getOrderCustomerId(order));
-                const status = getOrderStatus(order);
-
-                return (
-                  <div className="dashboard-item" key={getOrderId(order)}>
-                    <div>
-                      <strong className="dashboard-item-title mono">{getOrderId(order)}</strong>
-                      <div className="dashboard-item-meta">
-                        {getEventTitle(event)} - {customer?.full_name || customer?.name || "Customer"}
-                      </div>
-                    </div>
-                    <div className="dashboard-item-right">
-                      <span className="dashboard-item-amount">
-                        {currencyFormat.format(getOrderAmount(order))}
-                      </span>
-                      <span className={`chip dot ${getStatusClass(status)}`}>
-                        {getStatusLabel(status)}
-                      </span>
-                    </div>
+              {recentOrders.map((order) => (
+                <div className="dashboard-item" key={order.id}>
+                  <div>
+                    <strong className="dashboard-item-title mono">{order.id}</strong>
+                    <div className="dashboard-item-meta">{order.customerName}</div>
                   </div>
-                );
-              })}
+                  <div className="dashboard-item-right">
+                    <span className="dashboard-item-amount">
+                      {currencyFormat.format(order.totalAmount)}
+                    </span>
+                    <span className={`chip dot ${getStatusClass(order.paymentStatus)}`}>
+                      {getStatusLabel(order.paymentStatus)}
+                    </span>
+                  </div>
+                </div>
+              ))}
 
-              {recentOrders.length === 0 ? (
+              {recentOrders.length === 0 && (
                 <div className="dashboard-empty">Belum ada order yang masuk.</div>
-              ) : null}
+              )}
             </div>
           </section>
         </div>
@@ -390,7 +323,6 @@ function DashboardPage() {
           </section>
         </aside>
       </div>
-
     </div>
   );
 }

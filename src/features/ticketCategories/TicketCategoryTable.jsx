@@ -62,7 +62,9 @@ export function TicketCategoryTable({
           <tbody>
             {categories.map((category) => (
               <Tr key={category.id}>
-                <Td className="font-mono text-[11px] text-ink-dim">{category.id}</Td>
+                <Td className="font-mono text-[11px] text-ink-dim" title={category.id}>
+                  {category.id.slice(0, 8)}…
+                </Td>
                 <Td>{category.eventName}</Td>
                 <Td>
                   <strong>{category.name}</strong>

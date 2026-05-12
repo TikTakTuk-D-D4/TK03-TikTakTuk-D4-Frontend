@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getVenues, saveVenues } from "../services/venueService";
+import { getVenueById, createVenue, updateVenue } from "../services/venueService";
 
 function VenueFormPage() {
   const navigate = useNavigate();
@@ -13,46 +13,44 @@ function VenueFormPage() {
     capacity: "",
     seatingType: "free",
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (id) {
-      const venues = getVenues();
-      const selectedVenue = venues.find(
-        (venue) => venue.id === Number(id)
-      );
-
-      if (selectedVenue) {
-        setForm(selectedVenue);
-      }
+      getVenueById(id).then((venue) => {
+        if (venue) setForm(venue);
+      });
     }
   }, [id]);
 
   const handleChange = (field, value) => {
-    setForm((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const venues = getVenues();
-
-    const newVenue = {
-      ...form,
-      id: id ? Number(id) : Date.now(),
-      capacity: Number(form.capacity) || 0,
-    };
-
-    const updatedVenues = id
-      ? venues.map((venue) =>
-          venue.id === Number(id) ? newVenue : venue
-        )
-      : [...venues, newVenue];
-
-    saveVenues(updatedVenues);
-    navigate("/venues");
+    setLoading(true);
+    setError(null);
+    try {
+      const payload = {
+        name: form.name,
+        city: form.city,
+        address: form.address,
+        capacity: Number(form.capacity) || 0,
+        seatingType: form.seatingType,
+      };
+      if (id) {
+        await updateVenue(id, payload);
+      } else {
+        await createVenue(payload);
+      }
+      navigate("/venues");
+    } catch (err) {
+      setError(err.message || "Gagal menyimpan venue.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -62,6 +60,12 @@ function VenueFormPage() {
           {id ? "Edit Venue" : "Tambah Venue"}
         </h1>
 
+        {error && (
+          <div className="mb-4 rounded-lg bg-red-900/30 border border-red-700 px-4 py-3 text-red-400 text-sm">
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <input
             className="input"
@@ -69,6 +73,7 @@ function VenueFormPage() {
             value={form.name}
             maxLength={50}
             onChange={(e) => handleChange("name", e.target.value)}
+            required
           />
 
           <input
@@ -83,7 +88,7 @@ function VenueFormPage() {
             className="input"
             placeholder="Alamat"
             value={form.address}
-            maxLength={50}
+            maxLength={200}
             onChange={(e) => handleChange("address", e.target.value)}
           />
 
@@ -113,8 +118,8 @@ function VenueFormPage() {
             >
               Batal
             </button>
-            <button type="submit" className="btn-save" style={{ flex: 2 }}>
-              Simpan
+            <button type="submit" className="btn-save" style={{ flex: 2 }} disabled={loading}>
+              {loading ? "Menyimpan..." : "Simpan"}
             </button>
           </div>
         </form>
@@ -131,12 +136,10 @@ function VenueFormPage() {
           font-size: 15px;
           outline: none;
         }
-
         .input:focus {
           border-color: #ec4899;
           box-shadow: 0 0 0 2px rgba(236,72,153,0.2);
         }
-
         .btn-save {
           padding: 14px;
           border-radius: 12px;
@@ -145,10 +148,8 @@ function VenueFormPage() {
           font-size: 16px;
           transition: 0.2s;
         }
-
-        .btn-save:hover {
-          background: #db2777;
-        }
+        .btn-save:hover { background: #db2777; }
+        .btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
       `}</style>
     </div>
   );

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getPageUser, updateCurrentUser, updateUserPassword } from "../../auth/services/authService";
+import { getPageUser, updateCurrentUser, updateUserPassword, updateProfile } from "../../auth/services/authService";
 
 function isValidEmail(value) {
   return /.+@.+\..+/.test(value);
@@ -59,7 +59,7 @@ function ProfilePage() {
     setEditMessage("");
   };
 
-  const handleEditSubmit = (e) => {
+  const handleEditSubmit = async (e) => {
     e.preventDefault();
     const nextErrors = {};
 
@@ -75,15 +75,21 @@ function ProfilePage() {
 
     if (Object.keys(nextErrors).length) { setEditErrors(nextErrors); return; }
 
-    const patch = isCustomer
-      ? { name: editForm.full_name.trim(), full_name: editForm.full_name.trim(), phone_number: editForm.phone_number.trim() }
-      : { name: editForm.organizer_name.trim(), organizer_name: editForm.organizer_name.trim(), contact_email: editForm.contact_email.trim() };
-
-    const updated = updateCurrentUser(patch);
-    setUser(updated);
-    setEditMessage("Profil berhasil diperbarui.");
-    setEditErrors({});
-    setTimeout(() => { closeEdit(); }, 1200);
+    try {
+      const updated = await updateProfile({
+        user_id: user?.user_id,
+        full_name: editForm.full_name?.trim(),
+        phone_number: editForm.phone_number?.trim(),
+        organizer_name: editForm.organizer_name?.trim(),
+        contact_email: editForm.contact_email?.trim(),
+      });
+      setUser(updated);
+      setEditMessage("Profil berhasil diperbarui.");
+      setEditErrors({});
+      setTimeout(() => { closeEdit(); }, 1200);
+    } catch (err) {
+      setEditErrors({ form: err.message || "Gagal memperbarui profil." });
+    }
   };
 
   const handlePwSubmit = (e) => {
@@ -299,6 +305,7 @@ function ProfilePage() {
                 </>
               )}
 
+              {editErrors.form && <span className="form-error">{editErrors.form}</span>}
               {editMessage && <span className="hint" style={{ color: "var(--success, #22c55e)" }}>{editMessage}</span>}
             </form>
             <div className="modal-footer">

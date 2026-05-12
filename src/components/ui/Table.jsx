@@ -3,7 +3,9 @@ import { clsx } from "clsx";
 export function Table({ children, className }) {
   return (
     <div className={clsx("bg-card border border-edge rounded overflow-hidden shadow-card", className)}>
-      <table className="w-full text-sm border-collapse">{children}</table>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm border-collapse">{children}</table>
+      </div>
     </div>
   );
 }

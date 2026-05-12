@@ -1,52 +1,75 @@
-import { mockArtists } from "../../../data/mockArtists";
+import { apiFetch, API_URL } from "../../../lib/api";
 
-let artistState = [...mockArtists];
+const mapArtist = (a) => ({ id: a.artist_id, artist_id: a.artist_id, name: a.name, genre: a.genre });
 
-function createId() {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-  return `art-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+export async function getArtists() {
+  const res = await fetch(`${API_URL}/artists`);
+  const data = await res.json();
+  return Array.isArray(data) ? data.map(mapArtist) : [];
 }
 
-export function getArtists() {
-  return [...artistState];
-}
-
-export function createArtist(payload) {
-  const genre = typeof payload.genre === "string" ? payload.genre.trim() : payload.genre;
-
-  const artist = {
-    id: createId(),
-    name: payload.name,
-    genre: genre || null,
-  };
-  artistState = [artist, ...artistState];
-  return artist;
-}
-
-export function updateArtist(id, payload) {
-  let updated = null;
-  const genre = typeof payload.genre === "string" ? payload.genre.trim() : payload.genre;
-
-  artistState = artistState.map((artist) => {
-    if (artist.id !== id) return artist;
-    updated = {
-      ...artist,
+export async function createArtist(payload) {
+  const res = await apiFetch("/artists", {
+    method: "POST",
+    body: JSON.stringify({
       name: payload.name,
-      genre: genre || null,
-    };
-    return updated;
+      genre: payload.genre || null,
+    }),
   });
-  return updated;
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.message);
+  return { id: result.artist_id, name: result.name, genre: result.genre };
 }
 
-export function deleteArtist(id) {
-  const before = artistState.length;
-  artistState = artistState.filter((artist) => artist.id !== id);
-  return artistState.length < before;
+export async function updateArtist(id, payload) {
+  const res = await apiFetch(`/artists/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      name: payload.name,
+      genre: payload.genre || null,
+    }),
+  });
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.message);
+  return { id: result.artist_id, name: result.name, genre: result.genre };
 }
 
-export function resetArtists() {
-  artistState = [...mockArtists];
+export async function deleteArtist(id) {
+  const res = await apiFetch(`/artists/${id}`, { method: "DELETE" });
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.message);
+  return true;
 }
+
+export async function getArtistsByEvent(event_id) {
+  const res = await fetch(`${API_URL}/event-artists/${event_id}`);
+  return res.json();
+}
+
+export async function addArtistToEvent(event_id, artist_id, role) {
+  const res = await apiFetch("/event-artists", {
+    method: "POST",
+    body: JSON.stringify({ event_id, artist_id, role }),
+  });
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.message);
+  return result;
+}
+
+export async function removeArtistFromEvent(event_id, artist_id) {
+  const res = await apiFetch(`/event-artists/${event_id}/${artist_id}`, {
+    method: "DELETE",
+  });
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.message);
+  return result;
+}
+
+export async function getTicketQuota(event_id) {
+  const res = await fetch(`${API_URL}/event-artists/quota/${event_id}`);
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.message);
+  return result;
+}
+
+export function resetArtists() {}

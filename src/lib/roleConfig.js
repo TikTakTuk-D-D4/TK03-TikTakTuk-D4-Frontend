@@ -1,11 +1,12 @@
 export const navByRole = {
   admin: [
     { label: "Dashboard", path: "/dashboard" },
+    { label: "Manajemen Event", path: "/events" },
     { label: "Manajemen Venue", path: "/venues" },
     { label: "Manajemen Kursi", path: "/seats" },
     { label: "Kategori Tiket", path: "/ticket-categories" },
-    { label: "Manajemen Tiket", path: "/manage-tickets" },
-    { label: "Order", path: "/orders" },
+    { label: "Tiket (Aset)", path: "/manage-tickets" },
+    { label: "Order (Aset)", path: "/orders" },
   ],
   organizer: [
     { label: "Dashboard", path: "/dashboard" },
@@ -13,8 +14,8 @@ export const navByRole = {
     { label: "Manajemen Venue", path: "/venues" },
     { label: "Manajemen Kursi", path: "/seats" },
     { label: "Kategori Tiket", path: "/ticket-categories" },
-    { label: "Manajemen Tiket", path: "/manage-tickets" },
-    { label: "Order", path: "/orders" },
+    { label: "Tiket (Aset)", path: "/manage-tickets" },
+    { label: "Order (Aset)", path: "/orders" },
   ],
   customer: [
     { label: "Dashboard", path: "/dashboard" },

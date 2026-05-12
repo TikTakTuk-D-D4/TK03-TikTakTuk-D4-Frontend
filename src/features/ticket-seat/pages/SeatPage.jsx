@@ -1,5 +1,5 @@
-import { useRef, useState, useSyncExternalStore } from "react";
-import { getPageUser } from "../../auth/services/authService";
+import React, { useEffect, useRef, useState } from "react";
+import { useAuth } from "../../../context/AuthContext";
 import {
   AccessDenied,
   EmptyState,
@@ -8,17 +8,8 @@ import {
   StatCards,
   ToastStack,
 } from "../components/TicketSeatShared";
-import {
-  canAccessSeatManagement,
-  createSeat,
-  deleteSeat,
-  getManagedVenuesForUser,
-  getSeatViewModel,
-  getTicketSeatSnapshot,
-  getVisibleSeatsForUser,
-  subscribeTicketSeatStore,
-  updateSeat,
-} from "../services/ticketSeatStore";
+import { getSeats, createSeat, updateSeat, deleteSeat } from "../services/seatService";
+import { getVenues } from "../../venue-event/services/venueService";
 
 const initialForm = {
   venue_id: "",
@@ -29,7 +20,7 @@ const initialForm = {
 
 function sortSeatView(a, b) {
   return (
-    a.venue.name.localeCompare(b.venue.name) ||
+    (a.venue?.name || "").localeCompare(b.venue?.name || "") ||
     a.section.localeCompare(b.section) ||
     a.row_number.localeCompare(b.row_number) ||
     a.seat_number.localeCompare(b.seat_number, undefined, { numeric: true })
@@ -37,9 +28,10 @@ function sortSeatView(a, b) {
 }
 
 function SeatPage() {
-  useSyncExternalStore(subscribeTicketSeatStore, getTicketSeatSnapshot);
-
-  const user = getPageUser();
+  const { user } = useAuth();
+  const [seats, setSeats] = useState([]);
+  const [venues, setVenues] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [venueFilter, setVenueFilter] = useState("all");
   const [selectedSeatId, setSelectedSeatId] = useState("");
@@ -48,6 +40,19 @@ function SeatPage() {
   const [errors, setErrors] = useState({});
   const [toasts, setToasts] = useState([]);
   const toastCounterRef = useRef(0);
+
+  const canManage = user?.role === "admin" || user?.role === "organizer";
+
+  useEffect(() => {
+    Promise.all([getSeats(), getVenues()])
+      .then(([seatsData, venuesData]) => {
+        setSeats(seatsData);
+        setVenues(venuesData);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const refresh = () => getSeats().then(setSeats);
 
   const pushToast = (message, type = "success") => {
     toastCounterRef.current += 1;
@@ -58,11 +63,7 @@ function SeatPage() {
     }, 2800);
   };
 
-  const canManage = canAccessSeatManagement(user?.role);
-
-  const managedVenues = getManagedVenuesForUser(user);
-  const visibleSeats = getVisibleSeatsForUser(user).map(getSeatViewModel).sort(sortSeatView);
-  const reservedVenues = managedVenues.filter((venue) => venue.seating_type === "reserved");
+  const visibleSeats = seats.slice().sort(sortSeatView);
 
   const filteredSeats = visibleSeats.filter((seat) => {
     const matchesVenue = venueFilter === "all" || seat.venue_id === venueFilter;
@@ -73,7 +74,7 @@ function SeatPage() {
         seat.section,
         seat.row_number,
         seat.seat_number,
-        seat.venue.name,
+        seat.venue?.name,
         seat.seatLabel,
       ]
         .join(" ")
@@ -85,8 +86,8 @@ function SeatPage() {
 
   const venueForMap =
     venueFilter !== "all"
-      ? reservedVenues.find((venue) => venue.venue_id === venueFilter) || reservedVenues[0] || null
-      : reservedVenues[0] || null;
+      ? venues.find((v) => v.venue_id === venueFilter) || null
+      : null;
 
   const groupedSeats = venueForMap
     ? filteredSeats
@@ -111,7 +112,6 @@ function SeatPage() {
 
   const selectedSeat = visibleSeats.find((seat) => seat.seat_id === selectedSeatId) || null;
   const seatBeingEdited = visibleSeats.find((seat) => seat.seat_id === modalState.seatId) || null;
-  const seatLinkedToTicket = seatBeingEdited?.ticket;
 
   const stats = [
     { label: "Total Kursi", value: filteredSeats.length, sub: "Sesuai filter aktif" },
@@ -128,14 +128,14 @@ function SeatPage() {
     {
       label: "Venue Aktif",
       value: new Set(filteredSeats.map((seat) => seat.venue_id)).size,
-      sub: "Venue reserved/free milik role ini",
+      sub: "Venue dari kursi tersaring",
     },
   ];
 
   const openCreateModal = () => {
     setForm({
       ...initialForm,
-      venue_id: venueForMap?.venue_id || managedVenues[0]?.venue_id || "",
+      venue_id: venueForMap?.venue_id || venues[0]?.venue_id || "",
     });
     setErrors({});
     setModalState({ type: "create", seatId: "" });
@@ -164,66 +164,59 @@ function SeatPage() {
 
   const validateForm = () => {
     const nextErrors = {};
-
     if (!form.venue_id) nextErrors.venue_id = "Venue wajib dipilih.";
     if (!form.section.trim()) nextErrors.section = "Section wajib diisi.";
     if (!form.row_number.trim()) nextErrors.row_number = "Baris wajib diisi.";
     if (!form.seat_number.trim()) nextErrors.seat_number = "Nomor kursi wajib diisi.";
-
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     const payload = {
       venue_id: form.venue_id,
       section: form.section,
-      row_number: form.row_number,
+      row_number: form.row_number.toUpperCase(),
       seat_number: form.seat_number,
     };
 
-    const result =
-      modalState.type === "edit"
-        ? updateSeat(modalState.seatId, payload)
-        : createSeat(payload);
-
-    if (!result.ok) {
-      setErrors({ form: result.error });
-      return;
+    try {
+      if (modalState.type === "edit") {
+        await updateSeat(modalState.seatId, payload);
+        pushToast("Kursi berhasil diperbarui.");
+      } else {
+        await createSeat(payload);
+        pushToast("Kursi baru berhasil ditambahkan.");
+      }
+      await refresh();
+      closeModal();
+    } catch (err) {
+      setErrors({ form: err.message });
     }
-
-    pushToast(
-      modalState.type === "edit"
-        ? "Kursi berhasil diperbarui."
-        : "Kursi baru berhasil ditambahkan.",
-    );
-    closeModal();
   };
 
-  const handleDeleteSeat = () => {
-    const result = deleteSeat(modalState.seatId);
-
-    if (!result.ok) {
-      pushToast(result.error || "Gagal menghapus kursi.", "error");
-      return;
+  const handleDeleteSeat = async () => {
+    try {
+      await deleteSeat(modalState.seatId);
+      if (selectedSeatId === modalState.seatId) setSelectedSeatId("");
+      await refresh();
+      pushToast("Kursi berhasil dihapus.");
+      closeModal();
+    } catch (err) {
+      pushToast(err.message || "Gagal menghapus kursi.", "error");
     }
-
-    pushToast(
-      result.detachedTicketIds.length
-        ? "Kursi dihapus dan relasi ke tiket ikut dilepas."
-        : "Kursi berhasil dihapus.",
-    );
-    if (selectedSeatId === modalState.seatId) {
-      setSelectedSeatId("");
-    }
-    closeModal();
   };
+
+  if (loading) {
+    return (
+      <div className="page ticket-seat-page">
+        <p>Memuat data kursi...</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -248,7 +241,7 @@ function SeatPage() {
               Venue
               <select value={venueFilter} onChange={(event) => setVenueFilter(event.target.value)}>
                 <option value="all">Semua Venue</option>
-                {managedVenues.map((venue) => (
+                {venues.map((venue) => (
                   <option key={venue.venue_id} value={venue.venue_id}>
                     {venue.name}
                   </option>
@@ -275,13 +268,13 @@ function SeatPage() {
               <p>
                 {venueForMap
                   ? `${venueForMap.name} - klik kursi untuk melihat detail.`
-                  : "Belum ada venue reserved seating untuk ditampilkan."}
+                  : "Pilih venue spesifik dari filter untuk melihat denah kursi."}
               </p>
             </div>
             {selectedSeat ? <span className="badge">{selectedSeat.seatLabel}</span> : null}
           </div>
 
-          {venueForMap ? (
+          {venueForMap && seatMapRows.length > 0 ? (
             <div className="seat-wrap">
               <div className="legend">
                 <span className="item">
@@ -292,15 +285,10 @@ function SeatPage() {
                   <span className="dot sel" />
                   Assigned/Taken
                 </span>
-                <span className="item">
-                  <span className="dot taken" />
-                  Disabled
-                </span>
               </div>
               <div className="seat-map-shell" style={{ "--seat-map-width": `${seatMapWidth}px` }}>
                 <div className="stage">STAGE</div>
-              {seatMapRows.length ? (
-                seatMapRows.map((row) => (
+                {seatMapRows.map((row) => (
                   <div className="seat-row" key={row.rowId}>
                     <span className="row-id">{row.rowId}</span>
                     <div
@@ -312,8 +300,7 @@ function SeatPage() {
                       {row.seats.map((seat) => {
                         const isAssigned = seat.status === "Terpakai";
                         const isSelected = selectedSeatId === seat.seat_id;
-                        const className = isAssigned ? "seat selected" : isSelected ? "seat selected" : "seat free";
-
+                        const className = isAssigned || isSelected ? "seat selected" : "seat free";
                         return (
                           <button
                             key={seat.seat_id}
@@ -326,16 +313,13 @@ function SeatPage() {
                       })}
                     </div>
                   </div>
-                ))
-              ) : (
-                <p className="helper-text">Tidak ada kursi yang cocok dengan filter saat ini.</p>
-              )}
+                ))}
               </div>
             </div>
           ) : (
             <EmptyState
-              title="Belum ada venue reserved seating."
-              description="Tambah seat pada venue reserved atau pilih venue lain."
+              title={venueForMap ? "Tidak ada kursi untuk venue ini." : "Pilih venue dari filter untuk melihat denah."}
+              description="Tambah kursi baru atau pilih venue yang sudah memiliki kursi."
             />
           )}
         </section>
@@ -366,7 +350,7 @@ function SeatPage() {
                   {filteredSeats.map((seat) => (
                     <tr key={seat.seat_id}>
                       <td className="mono">{seat.seat_id}</td>
-                      <td>{seat.venue.name}</td>
+                      <td>{seat.venue?.name || "-"}</td>
                       <td>{seat.section}</td>
                       <td>{seat.row_number}</td>
                       <td>{seat.seat_number}</td>
@@ -395,7 +379,7 @@ function SeatPage() {
           ) : (
             <EmptyState
               title="Belum ada data kursi yang tampil."
-              description="Ubah filter atau tambahkan kursi baru untuk venue yang dikelola."
+              description="Ubah filter atau tambahkan kursi baru."
             />
           )}
         </section>
@@ -424,7 +408,7 @@ function SeatPage() {
               onChange={(event) => setForm((current) => ({ ...current, venue_id: event.target.value }))}
             >
               <option value="">Pilih venue</option>
-              {managedVenues.map((venue) => (
+              {venues.map((venue) => (
                 <option key={venue.venue_id} value={venue.venue_id}>
                   {venue.name}
                 </option>
@@ -493,15 +477,9 @@ function SeatPage() {
           <div className="form-section">
             <p>
               Anda akan menghapus kursi <strong>{seatBeingEdited.seatLabel}</strong> dari venue{" "}
-              <strong>{seatBeingEdited.venue.name}</strong>.
+              <strong>{seatBeingEdited.venue?.name}</strong>.
             </p>
-            {seatLinkedToTicket ? (
-              <div className="warning-box">
-                Kursi sedang terhubung ke tiket. Menghapus kursi akan melepas relasi kursi dari tiket.
-              </div>
-            ) : (
-              <p className="helper-text">Kursi belum terhubung ke tiket apa pun.</p>
-            )}
+            <p className="helper-text">Relasi kursi ke tiket akan ikut dilepas.</p>
           </div>
         ) : null}
       </Modal>

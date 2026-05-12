@@ -1,33 +1,39 @@
 import { createContext, useContext, useMemo, useState } from "react";
-import { getCurrentUser, loginAs, logout } from "../features/auth/services/authService";
+import { getCurrentUser, logout, loginWithCredentials } from "../features/auth/services/authService";
 
 const AuthContext = createContext(null);
 
-const PRESETS = {
-  admin: { id: "adm01", name: "Admin TikTakTuk", role: "admin" },
-  organizer: { id: "org01", name: "Bagas Production", role: "organizer" },
-  customer: { id: "cust01", name: "Andini Pertiwi", role: "customer" },
-  guest: null,
-};
-
 function normalizeUser(user) {
   if (!user) return null;
-  if (user.id && user.name) return user;
-  return PRESETS[user.role] || null;
+  const role = user.role === "administrator" ? "admin" : user.role;
+  return {
+    id: user.user_id || user.id,
+    name: user.full_name || user.organizer_name || user.username,
+    username: user.username,
+    role,
+    user_id: user.user_id || user.id,
+    organizer_id: user.organizer_id,
+    organizer_name: user.organizer_name,
+    customer_id: user.customer_id,
+    full_name: user.full_name,
+  };
 }
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => normalizeUser(getCurrentUser()));
 
+  const login = async ({ username, password }) => {
+    const raw = await loginWithCredentials({ username, password });
+    const normalized = normalizeUser(raw);
+    setUser(normalized);
+    return normalized;
+  };
+
   const switchRole = (role) => {
     if (role === "guest") {
       logout();
       setUser(null);
-      return;
     }
-
-    loginAs(role);
-    setUser(PRESETS[role] || null);
   };
 
   const logoutUser = () => {
@@ -35,7 +41,10 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
-  const value = useMemo(() => ({ user, setUser, switchRole, logoutUser }), [user]);
+  const value = useMemo(
+    () => ({ user, setUser, switchRole, logoutUser, login }),
+    [user]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

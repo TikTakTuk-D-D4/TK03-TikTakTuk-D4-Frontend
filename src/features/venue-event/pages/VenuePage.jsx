@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getVenues, saveVenues } from "../services/venueService";
+import { getVenues, deleteVenue } from "../services/venueService";
 import { isAdminOrOrganizer } from "../../auth/services/authService";
 
 function VenuePage() {
@@ -9,28 +9,31 @@ function VenuePage() {
   const [venues, setVenues] = useState([]);
   const [search, setSearch] = useState("");
   const [cityFilter, setCityFilter] = useState("");
-  const [seatingFilter, setSeatingFilter] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setVenues(getVenues());
+    getVenues()
+      .then(setVenues)
+      .finally(() => setLoading(false));
   }, []);
 
   const filteredVenues = venues.filter(
     (venue) =>
-      venue.name.toLowerCase().includes(search.toLowerCase()) &&
-      (cityFilter
-        ? venue.city.toLowerCase().includes(cityFilter.toLowerCase())
-        : true) &&
-      (seatingFilter ? venue.seatingType === seatingFilter : true)
+      venue.name?.toLowerCase().includes(search.toLowerCase()) &&
+      (cityFilter ? venue.city?.toLowerCase().includes(cityFilter.toLowerCase()) : true)
   );
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (!confirm("Yakin hapus venue ini?")) return;
-
-    const updated = venues.filter((v) => v.id !== id);
-    setVenues(updated);
-    saveVenues(updated);
+    try {
+      await deleteVenue(id);
+      setVenues((prev) => prev.filter((v) => v.id !== id));
+    } catch (err) {
+      alert(err.message);
+    }
   };
+
+  if (loading) return <div className="page"><p>Memuat data venue...</p></div>;
 
   return (
     <div className="page">
@@ -51,16 +54,6 @@ function VenuePage() {
           onChange={(e) => setCityFilter(e.target.value)}
         />
 
-        <select
-          className="px-3 py-2 rounded bg-gray-800"
-          value={seatingFilter}
-          onChange={(e) => setSeatingFilter(e.target.value)}
-        >
-          <option value="">All Seating</option>
-          <option value="free">Free</option>
-          <option value="reserved">Reserved</option>
-        </select>
-
         {isAdminOrOrganizer() && (
           <button
             onClick={() => navigate("/venues/create")}
@@ -78,14 +71,12 @@ function VenuePage() {
             <p>🏙️ {venue.city}</p>
             <p>📍 {venue.address}</p>
             <p>👥 {venue.capacity} orang</p>
-            <p>🪑 {venue.seatingType}</p>
 
             {isAdminOrOrganizer() && (
               <div className="flex gap-2 mt-3">
                 <button onClick={() => navigate(`/venues/edit/${venue.id}`)}>
                   Edit
                 </button>
-
                 <button onClick={() => handleDelete(venue.id)}>
                   Hapus
                 </button>

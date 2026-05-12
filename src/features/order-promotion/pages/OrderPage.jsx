@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { getPageUser } from "../../auth/services/authService";
+import React, { useEffect, useMemo, useState } from "react";
+import { useAuth } from "../../../context/AuthContext";
 
 import { Card, CardContent } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
@@ -14,13 +14,14 @@ import OrderSummaryCard from "../components/OrderSummaryCard";
 import OrderTable from "../components/OrderTable";
 import UpdateOrderModal from "../components/UpdateOrderModal";
 
-import orderDummyData from "../data/orderDummyData";
-import promotionDummyData from "../data/promotionDummyData";
+import { getOrders, createOrder, updateOrder, deleteOrder as deleteOrderApi } from "../services/orderService";
+import { getPromotions } from "../services/promotionService";
+import { getEvents } from "../../venue-event/services/eventService";
+import { getTicketCategories } from "../../artist-ticket-category/services/ticketCategoryService";
 
 import {
   PAYMENT_STATUS,
   ORDER_FILTER_OPTIONS,
-  SEATING_TYPE,
 } from "../constants/orderConstants";
 
 import {
@@ -31,55 +32,62 @@ import {
 } from "../utils/orderUtils";
 
 export default function OrderPage() {
-  const [role, setRole] = useState(() => {
-    const loggedIn = getPageUser();
-    return (loggedIn?.role || "customer").toUpperCase();
-  });
+  const { user } = useAuth();
+  const role = (user?.role || "customer").toUpperCase();
 
-  const [orders, setOrders] = useState(orderDummyData.orders);
-  const [selectedCategoryId, setSelectedCategoryId] = useState(
-    orderDummyData.checkoutDefaults.selectedCategoryId
-  );
-  const [quantity, setQuantity] = useState(orderDummyData.checkoutDefaults.quantity);
-  const [selectedSeatIds, setSelectedSeatIds] = useState(
-    orderDummyData.checkoutDefaults.selectedSeatIds || []
-  );
+  const [orders, setOrders] = useState([]);
+  const [promotions, setPromotions] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [ticketCategories, setTicketCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const [selectedEventId, setSelectedEventId] = useState(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+  const [quantity, setQuantity] = useState(1);
+  const [selectedSeatIds, setSelectedSeatIds] = useState([]);
   const [appliedPromo, setAppliedPromo] = useState(null);
+
+  useEffect(() => {
+    Promise.all([getOrders(), getPromotions(), getEvents()])
+      .then(([ordersData, promoData, eventsData]) => {
+        setOrders(ordersData);
+        setPromotions(promoData);
+        setEvents(eventsData);
+        if (eventsData.length > 0) setSelectedEventId(eventsData[0].id);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (!selectedEventId) { setTicketCategories([]); return; }
+    getTicketCategories(selectedEventId).then(setTicketCategories);
+  }, [selectedEventId]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
 
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isUpdateOpen, setIsUpdateOpen] = useState(false);
-  const [deleteOrder, setDeleteOrder] = useState(null);
+  const [orderToDelete, setOrderToDelete] = useState(null);
 
-  const event = orderDummyData.currentEvent;
-  const isReservedSeating = event.seatingType === SEATING_TYPE.RESERVED;
+  const isReservedSeating = false;
 
-  const selectedCategory = useMemo(() => {
-    return orderDummyData.ticketCategories.find(
-      (category) => category.id === selectedCategoryId
-    );
-  }, [selectedCategoryId]);
+  const selectedEvent = events.find((e) => e.id === selectedEventId) || null;
+  const selectedCategory = ticketCategories.find((c) => c.id === selectedCategoryId) || null;
 
   const orderTotal = calculateOrderTotal({
     price: selectedCategory?.price || 0,
     quantity,
     promo: appliedPromo,
-    serviceFee: orderDummyData.checkoutDefaults.serviceFee,
+    serviceFee: 5000,
   });
 
   const visibleOrders = useMemo(() => {
     return orders
       .filter((order) => {
         if (role === "CUSTOMER") {
-          return order.customerName === "Budi Santoso";
+          return order.customer_id === user?.customer_id;
         }
-
-        if (role === "ORGANIZER") {
-          return order.eventTitle === "Konser Melodi Senja";
-        }
-
         return true;
       })
       .filter((order) => {
@@ -94,7 +102,7 @@ export default function OrderPage() {
         return matchesSearch && matchesStatus;
       })
       .sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate));
-  }, [orders, role, searchTerm, statusFilter]);
+  }, [orders, role, searchTerm, statusFilter, user?.customer_id]);
 
   const stats = useMemo(() => {
     const totalOrder = visibleOrders.length;
@@ -108,69 +116,60 @@ export default function OrderPage() {
       .filter((order) => order.paymentStatus === PAYMENT_STATUS.PAID)
       .reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
 
-    return {
-      totalOrder,
-      paidOrder,
-      pendingOrder,
-      totalRevenue,
-    };
+    return { totalOrder, paidOrder, pendingOrder, totalRevenue };
   }, [visibleOrders]);
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     const quantityValidation = validateTicketQuantity(quantity);
-    if (!quantityValidation.isValid) {
-      alert(quantityValidation.message);
-      return;
+    if (!quantityValidation.isValid) { alert(quantityValidation.message); return; }
+
+    const seatValidation = validateSeatSelection({ selectedSeats: selectedSeatIds, quantity, isReservedSeating });
+    if (!seatValidation.isValid) { alert(seatValidation.message); return; }
+
+    try {
+      const newOrder = await createOrder({
+        customer_id: user?.customer_id || null,
+        total_amount: orderTotal.total,
+        payment_status: "Pending",
+        promotion_id: appliedPromo?.promotionId || null,
+      });
+      setOrders((prev) => [newOrder, ...prev]);
+    } catch (err) {
+      alert(err.message);
     }
+  };
 
-    const seatValidation = validateSeatSelection({
-      selectedSeats: selectedSeatIds,
-      quantity,
-      isReservedSeating,
-    });
+  const openUpdateModal = (order) => { setSelectedOrder(order); setIsUpdateOpen(true); };
+  const closeUpdateModal = () => { setSelectedOrder(null); setIsUpdateOpen(false); };
 
-    if (!seatValidation.isValid) {
-      alert(seatValidation.message);
-      return;
+  const handleUpdateOrder = async (updatedOrder) => {
+    try {
+      const saved = await updateOrder(updatedOrder.id, updatedOrder);
+      setOrders((prev) => prev.map((o) => (o.id === saved.id ? saved : o)));
+    } catch (err) {
+      alert(err.message);
     }
-
-    const newOrder = {
-      id: `ord_${String(orders.length + 1).padStart(3, "0")}`,
-      orderDate: new Date().toISOString(),
-      paymentStatus: PAYMENT_STATUS.PENDING,
-      totalAmount: orderTotal.total,
-      customerName: "Budi Santoso",
-      eventTitle: event.title,
-      itemCount: quantity,
-    };
-
-    setOrders((prev) => [newOrder, ...prev]);
-    setRole("CUSTOMER");
-  };
-
-  const openUpdateModal = (order) => {
-    setSelectedOrder(order);
-    setIsUpdateOpen(true);
-  };
-
-  const closeUpdateModal = () => {
-    setSelectedOrder(null);
-    setIsUpdateOpen(false);
-  };
-
-  const handleUpdateOrder = (updatedOrder) => {
-    setOrders((prev) =>
-      prev.map((order) => (order.id === updatedOrder.id ? updatedOrder : order))
-    );
     closeUpdateModal();
   };
 
-  const handleDeleteOrder = () => {
-    if (!deleteOrder) return;
-
-    setOrders((prev) => prev.filter((order) => order.id !== deleteOrder.id));
-    setDeleteOrder(null);
+  const handleDeleteOrder = async () => {
+    if (!orderToDelete) return;
+    try {
+      await deleteOrderApi(orderToDelete.id);
+      setOrders((prev) => prev.filter((o) => o.id !== orderToDelete.id));
+    } catch (err) {
+      alert(err.message);
+    }
+    setOrderToDelete(null);
   };
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-bg px-6 py-8 text-text">
+        <p>Memuat data order...</p>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-bg px-6 py-8 text-text">
@@ -188,56 +187,63 @@ export default function OrderPage() {
             </p>
           </div>
 
-          <div className="inline-flex rounded-full border border-line-soft bg-white/[0.04] p-1">
-            {["CUSTOMER", "ORGANIZER", "ADMIN"].map((item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => setRole(item)}
-                className={`rounded-full px-4 py-2 text-xs font-medium transition ${
-                  role === item
-                    ? "bg-primary text-white shadow-glow"
-                    : "text-muted hover:bg-white/[0.05] hover:text-text"
-                }`}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
         </header>
 
         {role === "CUSTOMER" && (
           <section className="flex flex-col gap-6 xl:flex-row xl:items-start">
             <div className="min-w-0 flex-1 space-y-6">
-              <Card className="border-line-soft bg-surface text-text shadow-soft">
-                <CardContent className="flex items-center gap-4 p-5">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[14px] bg-primary text-xl shadow-glow">
-                    ♫
-                  </div>
-
-                  <div>
-                    <h2 className="font-display text-lg font-semibold">
-                      {event.title}
-                    </h2>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <Badge variant="primary">{event.organizer}</Badge>
-                      <Badge variant="secondary">{event.venueCity}</Badge>
+              {events.length > 0 && (
+                <Card className="border-line-soft bg-surface text-text shadow-soft">
+                  <CardContent className="p-5 space-y-4">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[14px] bg-primary text-xl shadow-glow">
+                        ♫
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h2 className="font-display text-lg font-semibold">
+                          {selectedEvent?.title || "Pilih Event"}
+                        </h2>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <Badge variant="secondary">{selectedEvent?.venueName || "-"}</Badge>
+                        </div>
+                        <p className="mt-2 text-xs text-muted">
+                          {selectedEvent?.date} · {selectedEvent?.time}
+                        </p>
+                      </div>
                     </div>
-                    <p className="mt-2 text-xs text-muted">
-                      {event.eventDate} · {event.eventTime} · {event.venueName}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
 
-              <TicketCategoryList
-                categories={orderDummyData.ticketCategories}
-                selectedCategoryId={selectedCategoryId}
-                onSelect={(category) => {
-                  setSelectedCategoryId(category.id);
-                  setSelectedSeatIds([]);
-                }}
-              />
+                    <div>
+                      <label className="mb-1 block text-xs text-muted">Pilih Event</label>
+                      <select
+                        value={selectedEventId || ""}
+                        onChange={(e) => {
+                          setSelectedEventId(e.target.value);
+                          setSelectedCategoryId(null);
+                          setSelectedSeatIds([]);
+                        }}
+                        className="w-full h-10 rounded-[10px] border border-line-soft bg-white/[0.02] px-3 text-sm text-text outline-none focus:border-accent focus:ring-4 focus:ring-accent/20"
+                      >
+                        {events.map((ev) => (
+                          <option key={ev.id} value={ev.id}>
+                            {ev.title || ev.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {ticketCategories.length > 0 && (
+                <TicketCategoryList
+                  categories={ticketCategories}
+                  selectedCategoryId={selectedCategoryId}
+                  onSelect={(category) => {
+                    setSelectedCategoryId(category.id);
+                    setSelectedSeatIds([]);
+                  }}
+                />
+              )}
 
               <div className="flex flex-col gap-6 md:flex-row">
                 <QuantitySelector
@@ -257,7 +263,7 @@ export default function OrderPage() {
                   <Card className="border-line-soft bg-surface text-text shadow-soft md:flex-1">
                     <CardContent className="p-5">
                       <SeatPicker
-                        seats={orderDummyData.availableSeats}
+                        seats={[]}
                         selectedSeatIds={selectedSeatIds}
                         maxSelection={Number(quantity) || 1}
                         onChange={setSelectedSeatIds}
@@ -270,7 +276,7 @@ export default function OrderPage() {
               <Card className="border-line-soft bg-surface text-text shadow-soft">
                 <CardContent className="p-5">
                   <PromoCodeForm
-                    promotions={promotionDummyData}
+                    promotions={promotions}
                     appliedPromo={appliedPromo}
                     onApply={setAppliedPromo}
                     onRemove={() => setAppliedPromo(null)}
@@ -284,7 +290,7 @@ export default function OrderPage() {
                 price={selectedCategory?.price || 0}
                 quantity={Number(quantity) || 0}
                 promo={appliedPromo}
-                serviceFee={orderDummyData.checkoutDefaults.serviceFee}
+                serviceFee={5000}
                 onCheckout={handleCheckout}
               />
             </div>
@@ -304,21 +310,9 @@ export default function OrderPage() {
           </div>
 
           <div className="flex flex-col gap-4 md:flex-row">
-            <StatCard
-              label="Total Order"
-              value={stats.totalOrder}
-              className="md:flex-1"
-            />
-            <StatCard
-              label="Lunas"
-              value={stats.paidOrder}
-              className="md:flex-1"
-            />
-            <StatCard
-              label="Pending"
-              value={stats.pendingOrder}
-              className="md:flex-1"
-            />
+            <StatCard label="Total Order" value={stats.totalOrder} className="md:flex-1" />
+            <StatCard label="Lunas" value={stats.paidOrder} className="md:flex-1" />
+            <StatCard label="Pending" value={stats.pendingOrder} className="md:flex-1" />
             {role !== "CUSTOMER" && (
               <StatCard
                 label="Total Revenue"
@@ -357,7 +351,7 @@ export default function OrderPage() {
             role={role}
             isAdmin={role === "ADMIN"}
             onEdit={openUpdateModal}
-            onDelete={setDeleteOrder}
+            onDelete={setOrderToDelete}
           />
         </section>
       </div>
@@ -372,7 +366,7 @@ export default function OrderPage() {
         />
       )}
 
-      {deleteOrder && (
+      {orderToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-[18px] border border-line bg-surface p-6 text-text shadow-glow">
             <div className="flex items-start justify-between gap-4">
@@ -388,7 +382,7 @@ export default function OrderPage() {
 
               <button
                 type="button"
-                onClick={() => setDeleteOrder(null)}
+                onClick={() => setOrderToDelete(null)}
                 className="text-muted hover:text-text"
               >
                 ×
@@ -396,11 +390,11 @@ export default function OrderPage() {
             </div>
 
             <p className="mt-4 font-mono text-xs text-accent">
-              {deleteOrder.id}
+              {orderToDelete.id}
             </p>
 
             <div className="mt-6 flex justify-end gap-3">
-              <Button variant="ghost" onClick={() => setDeleteOrder(null)}>
+              <Button variant="ghost" onClick={() => setOrderToDelete(null)}>
                 Batal
               </Button>
               <Button variant="danger" onClick={handleDeleteOrder}>
