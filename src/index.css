@@ -1,3 +1,4 @@
+﻿@import url("https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
 @import "tailwindcss";
 
 @theme {
@@ -25,6 +26,32 @@
   --font-display: "Unbounded", sans-serif;
   --font-body: "Outfit", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
+
+  --color-bg-soft: #111111;
+  --color-card: #1a1a1a;
+  --color-card-hover: #222222;
+  --color-edge: #2a2a2a;
+  --color-edge-glow: #3a2a55;
+  --color-primary: #9b5de5;
+  --color-primary-soft: rgba(155, 93, 229, 0.12);
+  --color-primary-hover: #c77dff;
+  --color-ink: #ffffff;
+  --color-ink-dim: #b8b8b8;
+  --color-ink-mute: #707070;
+  --color-success: #4ade80;
+  --color-warning: #fbbf24;
+  --color-danger: #f87171;
+  --color-danger-soft: rgba(248, 113, 113, 0.12);
+
+  --font-sans: "Outfit", system-ui, sans-serif;
+  --font-display: "Unbounded", system-ui, sans-serif;
+  --font-body: "Outfit", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --shadow-card: 0 4px 24px -8px rgba(0, 0, 0, 0.6);
+  --shadow-btn-primary: 0 4px 24px -8px rgba(155, 93, 229, 0.45);
+  --shadow-glow: 0 0 0 1px #3a2a55, 0 8px 40px -8px rgba(155, 93, 229, 0.45);
+
 }
 
 body {
@@ -32,3 +59,292 @@ body {
 } html {
   min-height: 100%;
 }
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Outfit", system-ui, sans-serif;
+    color: #ffffff;
+    background-color: #0b0b0b;
+    background:
+      radial-gradient(ellipse 80% 50% at 80% 0%, rgba(155, 93, 229, 0.15), transparent 60%),
+      radial-gradient(ellipse 60% 40% at 0% 100%, rgba(199, 125, 255, 0.08), transparent 60%),
+      linear-gradient(180deg, #0b0b0b 0%, #090909 100%);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background: #9b5de5;
+    color: #ffffff;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #0b0b0b;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #2a2a2a;
+    border-radius: 5px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #9b5de5;
+  }
+}
+
+@layer components {
+  .page-container {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 1.75rem 1rem;
+    animation: fade-up 300ms ease-out both;
+  }
+
+  @media (min-width: 640px) {
+    .page-container {
+      padding-inline: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .page-container {
+      padding-inline: 2rem;
+    }
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 999px;
+    padding: 0.25rem 0.625rem;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .chip-primary {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border-width: 1px;
+    border-style: solid;
+    padding: 0.25rem 0.625rem;
+    font-size: 11px;
+    font-weight: 600;
+    color: #c77dff;
+    border-color: rgba(155, 93, 229, 0.3);
+    background-color: rgba(155, 93, 229, 0.12);
+  }
+
+  .chip-default {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border: 1px solid #2a2a2a;
+    padding: 0.25rem 0.625rem;
+    font-size: 11px;
+    font-weight: 600;
+    color: #b8b8b8;
+    background-color: #111111;
+  }
+
+  .bg-brand-gradient {
+    background-image: linear-gradient(135deg, #9b5de5 0%, #c77dff 100%);
+  }
+
+  .navbar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #2a2a2a;
+    background-color: rgb(11 11 11 / 82%);
+    backdrop-filter: blur(8px);
+  }
+
+  @media (min-width: 640px) {
+    .navbar {
+      padding-inline: 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .navbar {
+      padding-inline: 2rem;
+    }
+  }
+
+  .navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .navbar-brand strong {
+    font-family: "Unbounded", system-ui, sans-serif;
+    font-size: 1.125rem;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: #ffffff;
+  }
+
+  .role-badge {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    padding: 0.25rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid #2a2a2a;
+    color: #b8b8b8;
+    background: #111111;
+  }
+
+  .navbar-links {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    overflow-x: auto;
+  }
+
+  .navbar-links a {
+    font-size: 0.875rem;
+    color: #b8b8b8;
+    font-weight: 500;
+    padding: 0.375rem 0.625rem;
+    border-radius: 0.375rem;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color 180ms ease, background-color 180ms ease;
+  }
+
+  .navbar-links a:hover {
+    color: #c77dff;
+    background-color: rgba(155, 93, 229, 0.12);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+    transition: filter 180ms ease, transform 180ms ease;
+  }
+
+  .btn-danger {
+    background: rgba(248, 113, 113, 0.16);
+    border: 1px solid rgba(248, 113, 113, 0.45);
+    color: #fff;
+  }
+
+  .btn-danger:hover {
+    background: #f87171;
+    color: #0b0b0b;
+  }
+
+  .animate-pop-in {
+    animation: pop-in 220ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 180ms ease-out both;
+  }
+
+  .animate-toast-in {
+    animation: toast-in 250ms ease-out both;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes toast-in {
+  0% {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--color-edge);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-primary);
+}
+
+

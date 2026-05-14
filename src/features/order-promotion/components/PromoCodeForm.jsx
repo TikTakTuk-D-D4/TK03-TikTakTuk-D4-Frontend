@@ -5,6 +5,7 @@ import { Divider } from "../../../components/ui/Divider";
 import { Badge } from "../../../components/ui/Badge";
 
 import { applyPromoCode, formatCurrency } from "../utils/orderUtils";
+import { normalizePromoCode } from "../utils/promotionUtils";
 
 import {
   formatPromotionType,
@@ -23,9 +24,24 @@ export default function PromoCodeForm({
   const [successMessage, setSuccessMessage] = useState("");
 
   const handleApplyPromo = () => {
+    const normalizedCode = normalizePromoCode(promoCode);
+    if (!normalizedCode) {
+      setError("Kode promo wajib diisi.");
+      setSuccessMessage("");
+      onApply?.(null);
+      return;
+    }
+
     const result = applyPromoCode(promotions, promoCode);
 
     if (result.error) {
+      if (result.error === "Kode promo tidak valid.") {
+        setError("");
+        setSuccessMessage("Kode promo akan divalidasi saat checkout.");
+        onApply?.({ promoCode: normalizedCode });
+        return;
+      }
+
       setError(result.error);
       setSuccessMessage("");
       onApply?.(null);
@@ -90,7 +106,7 @@ export default function PromoCodeForm({
         <p className="text-xs text-ok">{successMessage}</p>
       )}
 
-      {appliedPromo && (
+      {appliedPromo?.discountType ? (
         <>
           <Divider />
 
@@ -152,7 +168,42 @@ export default function PromoCodeForm({
             </div>
           </div>
         </>
-      )}
+      ) : appliedPromo?.promoCode ? (
+        <>
+          <Divider />
+
+          <div className="rounded-[14px] border border-line bg-primary/15 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-text">
+                  Kode Akan Divalidasi
+                </p>
+                <p className="mt-1 font-mono text-xs text-accent">
+                  {appliedPromo.promoCode}
+                </p>
+              </div>
+
+              <Badge variant="secondary">Pending</Badge>
+            </div>
+
+            <p className="mt-3 text-sm text-muted">
+              Diskon final akan ditentukan oleh backend saat checkout.
+            </p>
+
+            <div className="mt-4">
+              <Button
+                type="button"
+                variant="ghost"
+                fullWidth
+                onClick={handleRemovePromo}
+                className="border border-line-soft bg-white/[0.03] text-muted hover:border-danger/40 hover:bg-danger/15 hover:text-danger"
+              >
+                Hapus Promo
+              </Button>
+            </div>
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }

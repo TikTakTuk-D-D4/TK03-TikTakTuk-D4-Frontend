@@ -87,11 +87,9 @@ export default function PromotionTable({
                   className="border-b border-white/5 transition last:border-b-0 hover:bg-white/[0.02]"
                 >
                   <td className="px-4 py-4">
-                    <div className="flex items-start gap-3">
-                      <div className="grid h-8 w-8 place-items-center rounded-[10px] border border-line bg-primary/10 font-mono text-[10px] text-accent">
-                        PR
-                      </div>
-                      <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <div className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px] border border-line bg-primary/10" />
+                      <div className="flex flex-col gap-1">
                         <p className="font-display text-sm font-semibold text-text">
                           {promotion.promoCode}
                         </p>
@@ -109,12 +107,16 @@ export default function PromotionTable({
                     )}
                   </td>
 
-                  <td className="px-4 py-4 font-mono text-xs text-muted">
-                    {promotion.startDate}
+                  <td className="px-4 py-4 text-xs text-muted">
+                    {promotion.startDate
+                      ? new Date(promotion.startDate).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
+                      : "-"}
                   </td>
 
-                  <td className="px-4 py-4 font-mono text-xs text-muted">
-                    {promotion.endDate}
+                  <td className="px-4 py-4 text-xs text-muted">
+                    {promotion.endDate
+                      ? new Date(promotion.endDate).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
+                      : "-"}
                   </td>
 
                   <td className="px-4 py-4">

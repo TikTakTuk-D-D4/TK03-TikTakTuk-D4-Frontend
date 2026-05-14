@@ -1,6 +1,6 @@
-import { useRef, useState, useSyncExternalStore } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { getPageUser } from "../../auth/services/authService";
+import { useAuth } from "../../../context/AuthContext";
 import {
   AccessDenied,
   EmptyState,
@@ -9,31 +9,21 @@ import {
   StatCards,
   ToastStack,
 } from "../components/TicketSeatShared";
-import {
-  canAccessTicketManagement,
-  deleteTicket,
-  getAvailableSeatsByVenue,
-  getManagedEventsForUser,
-  getManagedVenuesForUser,
-  getTicketSeatSnapshot,
-  getTicketViewModel,
-  getVisibleTicketsForUser,
-  issueTicket,
-  subscribeTicketSeatStore,
-  updateTicket,
-} from "../services/ticketSeatStore";
+import { getTickets, createTicket, updateTicketStatus, deleteTicket, getCustomers } from "../services/ticketService";
+import { getTicketCategories } from "../../artist-ticket-category/services/ticketCategoryService";
+import { getSeats } from "../services/seatService";
+import { getOrders, createOrder } from "../../order-promotion/services/orderService";
 
 const initialIssueForm = {
   customer_id: "",
-  order_id: "",
   category_id: "",
+  event_id: "",
   seat_id: "",
   status: "active",
 };
 
 const initialEditForm = {
   status: "active",
-  seat_id: "",
 };
 
 const currencyFormat = new Intl.NumberFormat("id-ID", {
@@ -44,35 +34,30 @@ const currencyFormat = new Intl.NumberFormat("id-ID", {
 
 function formatDateTime(value) {
   if (!value) return "-";
-  return new Intl.DateTimeFormat("id-ID", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+  return new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }
 
 function ticketSort(a, b) {
-  return new Date(b.order.order_date).getTime() - new Date(a.order.order_date).getTime();
+  if (!a.event?.event_datetime) return 1;
+  if (!b.event?.event_datetime) return -1;
+  return new Date(b.event.event_datetime).getTime() - new Date(a.event.event_datetime).getTime();
 }
 
 function getStatusLabel(status) {
-  switch (status) {
-    case "active":
-      return "Scan Entry";
-    case "pending":
-      return "Pending Check";
-    case "used":
-      return "Used";
-    case "cancelled":
-      return "Void";
-    default:
-      return "E-Ticket";
-  }
+  const labels = { active: "Scan Entry", pending: "Pending Check", used: "Used", cancelled: "Void" };
+  return labels[status] || "E-Ticket";
 }
 
 function TicketPage() {
-  const snapshot = useSyncExternalStore(subscribeTicketSeatStore, getTicketSeatSnapshot);
   const location = useLocation();
-  const user = getPageUser();
+  const { user } = useAuth();
+
+  const [tickets, setTickets] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [availableSeats, setAvailableSeats] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [eventFilter, setEventFilter] = useState("all");
@@ -84,6 +69,39 @@ function TicketPage() {
   const [toasts, setToasts] = useState([]);
   const toastCounterRef = useRef(0);
 
+  const isManagementView = user?.role === "admin" || user?.role === "organizer";
+  const adminCanMutate = user?.role === "admin";
+
+  const isManagementPath = location.pathname === "/manage-tickets";
+  const accessDenied = isManagementPath && !isManagementView;
+
+  useEffect(() => {
+    const query = user?.role === "customer" ? { customer_id: user.customer_id } : {};
+    Promise.all([
+      getTickets(query),
+      getCustomers(),
+      getTicketCategories(),
+    ])
+      .then(([ticketsData, customersData, categoriesData]) => {
+        setTickets(ticketsData);
+        setCustomers(customersData);
+        setCategories(categoriesData);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (!issueForm.event_id) { setAvailableSeats([]); return; }
+    getSeats().then((seatsData) => {
+      setAvailableSeats(seatsData.filter((s) => !s.is_taken));
+    });
+  }, [issueForm.event_id]);
+
+  const refresh = () => {
+    const query = user?.role === "customer" ? { customer_id: user.customer_id } : {};
+    return getTickets(query).then(setTickets);
+  };
+
   const pushToast = (message, type = "success") => {
     toastCounterRef.current += 1;
     const id = `ticket-toast-${toastCounterRef.current}`;
@@ -93,39 +111,9 @@ function TicketPage() {
     }, 2800);
   };
 
-  const isManagementPath = location.pathname === "/manage-tickets";
-  const isMyTicketsPath = location.pathname === "/my-tickets";
-  const adminCanMutate = user?.role === "admin";
+  const sortedTickets = tickets.slice().sort(ticketSort);
 
-  if (isManagementPath && !canAccessTicketManagement(user?.role)) {
-    return (
-      <AccessDenied
-        title="Manajemen Tiket hanya untuk Admin dan Organizer."
-        description="Customer tidak dapat mengakses halaman issue dan pengelolaan tiket."
-      />
-    );
-  }
-
-  if (isMyTicketsPath && user?.role !== "customer") {
-    return (
-      <AccessDenied
-        title="Halaman Tiket Saya hanya untuk Customer."
-        description="Gunakan Manajemen Tiket untuk melihat dan mengelola tiket lintas customer."
-      />
-    );
-  }
-
-  const isManagementView = canAccessTicketManagement(user?.role);
-  const visibleTickets = getVisibleTicketsForUser(user).map(getTicketViewModel).sort(ticketSort);
-  const managedEvents = getManagedEventsForUser(user);
-  const managedEventIds = new Set(managedEvents.map((eventItem) => eventItem.event_id));
-  const managedCategories = snapshot.ticketCategories.filter((category) =>
-    managedEventIds.has(category.event_id),
-  );
-  const managedVenues = getManagedVenuesForUser(user);
-  const allCustomers = snapshot.customers;
-
-  const filteredTickets = visibleTickets.filter((ticket) => {
+  const filteredTickets = sortedTickets.filter((ticket) => {
     const matchesSearch =
       !search ||
       [
@@ -148,66 +136,27 @@ function TicketPage() {
 
   const summaryItems = [
     { label: "Total Tiket", value: filteredTickets.length, sub: "Sesuai filter aktif" },
-    {
-      label: "Active",
-      value: filteredTickets.filter((ticket) => ticket.status === "active").length,
-      sub: "Tiket siap digunakan",
-    },
-    {
-      label: "Pending",
-      value: filteredTickets.filter((ticket) => ticket.status === "pending").length,
-      sub: "Menunggu konfirmasi",
-    },
+    { label: "Active", value: filteredTickets.filter((t) => t.status === "active").length, sub: "Tiket siap digunakan" },
+    { label: "Pending", value: filteredTickets.filter((t) => t.status === "pending").length, sub: "Menunggu konfirmasi" },
     {
       label: "Used/Cancelled",
-      value: filteredTickets.filter((ticket) => ticket.status === "used" || ticket.status === "cancelled").length,
+      value: filteredTickets.filter((t) => t.status === "used" || t.status === "cancelled").length,
       sub: "Sudah dipakai atau dibatalkan",
     },
   ];
 
-  const ticketBeingEdited =
-    visibleTickets.find((ticket) => ticket.ticket_id === modalState.ticketId) || null;
+  const ticketBeingEdited = tickets.find((t) => t.ticket_id === modalState.ticketId) || null;
 
-  const issueCategory = managedCategories.find(
-    (category) => category.category_id === issueForm.category_id,
-  );
-  const issueEvent = issueCategory
-    ? managedEvents.find((eventItem) => eventItem.event_id === issueCategory.event_id)
-    : null;
-  const issueVenue = issueEvent
-    ? managedVenues.find((venue) => venue.venue_id === issueEvent.venue_id)
-    : null;
-  const issueSeatOptions =
-    issueVenue?.seating_type === "reserved"
-      ? getAvailableSeatsByVenue(issueVenue.venue_id)
-      : [];
-
-  const editSeatOptions =
-    ticketBeingEdited && ticketBeingEdited.venue?.seating_type === "reserved"
-      ? getAvailableSeatsByVenue(ticketBeingEdited.venue.venue_id, ticketBeingEdited.ticket_id)
-      : [];
-
-  const availableOrders = snapshot.orders.filter((order) => {
-    if (!issueForm.customer_id) return false;
-    if (order.customer_id !== issueForm.customer_id) return false;
-    if (issueEvent && order.event_id !== issueEvent.event_id) return false;
-    return true;
-  });
+  const issueCategory = categories.find((c) => c.id === issueForm.category_id);
 
   const openIssueModal = () => {
-    setIssueForm({
-      ...initialIssueForm,
-      customer_id: allCustomers[0]?.customer_id || "",
-    });
+    setIssueForm({ ...initialIssueForm, customer_id: customers[0]?.customer_id || "" });
     setErrors({});
     setModalState({ type: "issue", ticketId: "" });
   };
 
   const openEditModal = (ticket) => {
-    setEditForm({
-      status: ticket.status,
-      seat_id: ticket.seat?.seat_id || "",
-    });
+    setEditForm({ status: ticket.status });
     setErrors({});
     setModalState({ type: "edit", ticketId: ticket.ticket_id });
   };
@@ -222,56 +171,83 @@ function TicketPage() {
     setErrors({});
   };
 
-  const handleIssueSubmit = (event) => {
+  const handleIssueSubmit = async (event) => {
     event.preventDefault();
-
     const nextErrors = {};
     if (!issueForm.customer_id) nextErrors.customer_id = "Customer wajib dipilih.";
     if (!issueForm.category_id) nextErrors.category_id = "Kategori tiket wajib dipilih.";
-
-    if (issueVenue?.seating_type === "reserved" && issueForm.seat_id && !issueSeatOptions.some((seat) => seat.seat_id === issueForm.seat_id)) {
-      nextErrors.seat_id = "Kursi yang dipilih sudah tidak tersedia.";
-    }
-
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
 
-    const result = issueTicket(issueForm);
+    try {
+      const paymentStatus = issueForm.status === "active" ? "Paid" : "Pending";
+      const order = await createOrder({
+        customer_id: issueForm.customer_id,
+        total_amount: issueCategory?.price || 0,
+        payment_status: paymentStatus,
+      });
 
-    if (!result.ok) {
-      setErrors({ form: result.error });
-      return;
+      await createTicket({
+        tcategory_id: issueForm.category_id,
+        torder_id: order.id,
+        seat_id: issueForm.seat_id || null,
+      });
+
+      await refresh();
+      pushToast("Tiket baru berhasil di-issue.");
+      closeModal();
+    } catch (err) {
+      setErrors({ form: err.message });
     }
-
-    pushToast("Tiket baru berhasil di-issue.");
-    closeModal();
   };
 
-  const handleEditSubmit = (event) => {
+  const handleEditSubmit = async (event) => {
     event.preventDefault();
-
-    const result = updateTicket(modalState.ticketId, editForm);
-
-    if (!result.ok) {
-      setErrors({ form: result.error });
-      return;
+    try {
+      await updateTicketStatus(modalState.ticketId, editForm.status);
+      await refresh();
+      pushToast("Tiket berhasil diperbarui.");
+      closeModal();
+    } catch (err) {
+      setErrors({ form: err.message });
     }
-
-    pushToast("Tiket berhasil diperbarui.");
-    closeModal();
   };
 
-  const handleDeleteTicket = () => {
-    const result = deleteTicket(modalState.ticketId);
-
-    if (!result.ok) {
-      pushToast(result.error || "Gagal menghapus tiket.", "error");
-      return;
+  const handleDeleteTicket = async () => {
+    try {
+      await deleteTicket(modalState.ticketId);
+      await refresh();
+      pushToast("Tiket berhasil dihapus.");
+      closeModal();
+    } catch (err) {
+      pushToast(err.message || "Gagal menghapus tiket.", "error");
     }
-
-    pushToast("Tiket berhasil dihapus dan relasi kursi ikut dilepas.");
-    closeModal();
   };
+
+  if (accessDenied) {
+    return (
+      <AccessDenied
+        title="Manajemen Tiket hanya untuk Admin dan Organizer."
+        description="Customer tidak dapat mengakses halaman issue dan pengelolaan tiket."
+      />
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="page ticket-seat-page">
+        <p>Memuat data tiket...</p>
+      </div>
+    );
+  }
+
+  const uniqueEvents = [...new Map(
+    tickets.map((t) => [t.event?.event_id, t.event]).filter(([id]) => Boolean(id))
+  ).values()];
+
+  const uniqueCategories = [...new Map(
+    tickets.map((t) => [t.category?.category_id, t.category]).filter(([id]) => Boolean(id))
+  ).values()];
 
   return (
     <>
@@ -321,13 +297,11 @@ function TicketPage() {
               Event
               <select value={eventFilter} onChange={(event) => setEventFilter(event.target.value)}>
                 <option value="all">Semua Event</option>
-                {[...new Map(visibleTickets.map((ticket) => [ticket.event?.event_id, ticket.event])).values()]
-                  .filter(Boolean)
-                  .map((eventItem) => (
-                    <option key={eventItem.event_id} value={eventItem.event_id}>
-                      {eventItem.title}
-                    </option>
-                  ))}
+                {uniqueEvents.map((ev) => (
+                  <option key={ev.event_id} value={ev.event_id}>
+                    {ev.title}
+                  </option>
+                ))}
               </select>
             </label>
 
@@ -335,13 +309,11 @@ function TicketPage() {
               Category
               <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
                 <option value="all">Semua Category</option>
-                {[...new Map(visibleTickets.map((ticket) => [ticket.category?.category_id, ticket.category])).values()]
-                  .filter(Boolean)
-                  .map((category) => (
-                    <option key={category.category_id} value={category.category_id}>
-                      {category.category_name}
-                    </option>
-                  ))}
+                {uniqueCategories.map((cat) => (
+                  <option key={cat.category_id} value={cat.category_id}>
+                    {cat.category_name}
+                  </option>
+                ))}
               </select>
             </label>
           </div>
@@ -371,28 +343,18 @@ function TicketPage() {
                     ) : (
                       <div className="ticket-scan-box" aria-hidden="true">
                         <span className="ticket-scan-kicker">{getStatusLabel(ticket.status)}</span>
-                        <span className="ticket-scan-code mono">
-                          {ticket.ticket_code.slice(-4)}
-                        </span>
                       </div>
                     )}
                   </div>
 
                   <div className="ticket-meta">
+                    <span><strong>Pelanggan:</strong> {ticket.customer?.full_name || "-"}</span>
+                    <span><strong>Venue:</strong> {ticket.venue?.name || "-"}</span>
+                    <span><strong>Jadwal:</strong> {formatDateTime(ticket.event?.event_datetime)}</span>
+                    <span><strong>Seat:</strong> {ticket.seatLabel}</span>
                     <span>
-                      <strong>Pelanggan:</strong> {ticket.customer?.full_name || "-"}
-                    </span>
-                    <span>
-                      <strong>Venue:</strong> {ticket.venue?.name || "-"}
-                    </span>
-                    <span>
-                      <strong>Jadwal:</strong> {formatDateTime(ticket.event?.event_datetime)}
-                    </span>
-                    <span>
-                      <strong>Seat:</strong> {ticket.seatLabel}
-                    </span>
-                    <span>
-                      <strong>Order:</strong> <span className="mono">{ticket.order?.order_id || "-"}</span>
+                      <strong>Order:</strong>{" "}
+                      <span className="mono">{ticket.order?.order_id || "-"}</span>
                     </span>
                     <span>
                       <strong>Harga:</strong>{" "}
@@ -438,12 +400,8 @@ function TicketPage() {
         onClose={closeModal}
         footer={
           <>
-            <button className="btn btn-ghost" type="button" onClick={closeModal}>
-              Batal
-            </button>
-            <button className="btn btn-primary" type="submit" form="issue-ticket-form">
-              Buat Tiket
-            </button>
+            <button className="btn btn-ghost" type="button" onClick={closeModal}>Batal</button>
+            <button className="btn btn-primary" type="submit" form="issue-ticket-form">Buat Tiket</button>
           </>
         }
       >
@@ -452,16 +410,10 @@ function TicketPage() {
             Customer
             <select
               value={issueForm.customer_id}
-              onChange={(event) =>
-                setIssueForm((current) => ({
-                  ...current,
-                  customer_id: event.target.value,
-                  order_id: "",
-                }))
-              }
+              onChange={(event) => setIssueForm((f) => ({ ...f, customer_id: event.target.value }))}
             >
               <option value="">Pilih customer</option>
-              {allCustomers.map((customer) => (
+              {customers.map((customer) => (
                 <option key={customer.customer_id} value={customer.customer_id}>
                   {customer.full_name}
                 </option>
@@ -474,81 +426,48 @@ function TicketPage() {
             Ticket Category
             <select
               value={issueForm.category_id}
-              onChange={(event) =>
-                setIssueForm((current) => ({
-                  ...current,
+              onChange={(event) => {
+                const cat = categories.find((c) => c.id === event.target.value);
+                setIssueForm((f) => ({
+                  ...f,
                   category_id: event.target.value,
-                  order_id: "",
+                  event_id: cat?.eventId || "",
                   seat_id: "",
-                }))
-              }
+                }));
+              }}
             >
               <option value="">Pilih category</option>
-              {managedCategories.map((category) => (
-                <option key={category.category_id} value={category.category_id}>
-                  {category.category_name} - {currencyFormat.format(category.price)}
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name} - {currencyFormat.format(cat.price)}
                 </option>
               ))}
             </select>
             {errors.category_id ? <span className="form-error">{errors.category_id}</span> : null}
           </label>
 
-          <label>
-            Order
-            <select
-              value={issueForm.order_id}
-              onChange={(event) =>
-                setIssueForm((current) => ({
-                  ...current,
-                  order_id: event.target.value,
-                }))
-              }
-            >
-              <option value="">Buat order otomatis</option>
-              {availableOrders.map((order) => (
-                <option key={order.order_id} value={order.order_id}>
-                  {order.order_id} - {formatDateTime(order.order_date)}
-                </option>
-              ))}
-            </select>
-            <span className="hint">
-              Jika tidak ada order yang cocok, sistem akan membuat order dummy berstatus paid.
-            </span>
-          </label>
-
-          {issueVenue?.seating_type === "reserved" ? (
+          {availableSeats.length > 0 && (
             <label>
-              Seat
+              Seat (opsional)
               <select
                 value={issueForm.seat_id}
-                onChange={(event) =>
-                  setIssueForm((current) => ({
-                    ...current,
-                    seat_id: event.target.value,
-                  }))
-                }
+                onChange={(event) => setIssueForm((f) => ({ ...f, seat_id: event.target.value }))}
               >
                 <option value="">Tanpa Kursi</option>
-                {issueSeatOptions.map((seat) => (
+                {availableSeats.map((seat) => (
                   <option key={seat.seat_id} value={seat.seat_id}>
-                    {seat.section} - Baris {seat.row_number}, No. {seat.seat_number}
+                    {seat.seatLabel}
                   </option>
                 ))}
               </select>
-              {errors.seat_id ? <span className="form-error">{errors.seat_id}</span> : null}
             </label>
-          ) : null}
+          )}
 
           <label>
             Status
             <select
               value={issueForm.status}
-              onChange={(event) =>
-                setIssueForm((current) => ({
-                  ...current,
-                  status: event.target.value,
-                }))
-              }
+              onChange={(event) => setIssueForm((f) => ({ ...f, status: event.target.value }))}
             >
               <option value="active">active</option>
               <option value="pending">pending</option>
@@ -557,14 +476,13 @@ function TicketPage() {
             </select>
           </label>
 
-          <div className="helper-block">
-            <div className="helper-text">
-              <strong>Event:</strong> {issueEvent?.title || "-"}
+          {issueCategory && (
+            <div className="helper-block">
+              <div className="helper-text">
+                <strong>Harga:</strong> {currencyFormat.format(issueCategory.price)}
+              </div>
             </div>
-            <div className="helper-text">
-              <strong>Venue:</strong> {issueVenue?.name || "-"}
-            </div>
-          </div>
+          )}
 
           {errors.form ? <span className="form-error">{errors.form}</span> : null}
         </form>
@@ -576,12 +494,8 @@ function TicketPage() {
         onClose={closeModal}
         footer={
           <>
-            <button className="btn btn-ghost" type="button" onClick={closeModal}>
-              Batal
-            </button>
-            <button className="btn btn-primary" type="submit" form="edit-ticket-form">
-              Simpan
-            </button>
+            <button className="btn btn-ghost" type="button" onClick={closeModal}>Batal</button>
+            <button className="btn btn-primary" type="submit" form="edit-ticket-form">Simpan</button>
           </>
         }
       >
@@ -591,17 +505,11 @@ function TicketPage() {
               Kode Tiket
               <input type="text" value={ticketBeingEdited.ticket_code} disabled />
             </label>
-
             <label>
               Status
               <select
                 value={editForm.status}
-                onChange={(event) =>
-                  setEditForm((current) => ({
-                    ...current,
-                    status: event.target.value,
-                  }))
-                }
+                onChange={(event) => setEditForm((f) => ({ ...f, status: event.target.value }))}
               >
                 <option value="active">active</option>
                 <option value="pending">pending</option>
@@ -609,29 +517,6 @@ function TicketPage() {
                 <option value="cancelled">cancelled</option>
               </select>
             </label>
-
-            {ticketBeingEdited.venue?.seating_type === "reserved" ? (
-              <label>
-                Seat
-                <select
-                  value={editForm.seat_id}
-                  onChange={(event) =>
-                    setEditForm((current) => ({
-                      ...current,
-                      seat_id: event.target.value,
-                    }))
-                  }
-                >
-                  <option value="">Tanpa Kursi</option>
-                  {editSeatOptions.map((seat) => (
-                    <option key={seat.seat_id} value={seat.seat_id}>
-                      {seat.section} - Baris {seat.row_number}, No. {seat.seat_number}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
-
             {errors.form ? <span className="form-error">{errors.form}</span> : null}
           </form>
         ) : null}
@@ -643,12 +528,8 @@ function TicketPage() {
         onClose={closeModal}
         footer={
           <>
-            <button className="btn btn-ghost" type="button" onClick={closeModal}>
-              Batal
-            </button>
-            <button className="btn btn-danger" type="button" onClick={handleDeleteTicket}>
-              Hapus
-            </button>
+            <button className="btn btn-ghost" type="button" onClick={closeModal}>Batal</button>
+            <button className="btn btn-danger" type="button" onClick={handleDeleteTicket}>Hapus</button>
           </>
         }
       >
@@ -656,7 +537,7 @@ function TicketPage() {
           <div className="form-section">
             <p>
               Anda akan menghapus tiket <strong>{ticketBeingEdited.ticket_code}</strong> milik{" "}
-              <strong>{ticketBeingEdited.customer?.full_name}</strong>.
+              <strong>{ticketBeingEdited.customer?.full_name || "customer"}</strong>.
             </p>
             <div className="warning-box">
               Ticket akan dihapus permanen dan relasi kursi akan dilepas sehingga seat kembali tersedia.

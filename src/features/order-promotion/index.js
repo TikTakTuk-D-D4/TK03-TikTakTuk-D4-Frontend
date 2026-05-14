@@ -22,6 +22,3 @@ export * from "./utils/promotionUtils";
 
 export * from "./constants/orderConstants";
 export * from "./constants/promotionConstants";
-
-export { default as orderDummyData } from "./data/orderDummyData";
-export { default as promotionDummyData } from "./data/promotionDummyData";
