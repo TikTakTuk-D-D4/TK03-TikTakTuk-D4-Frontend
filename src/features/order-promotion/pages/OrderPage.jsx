@@ -15,11 +15,14 @@ import OrderTable from "../components/OrderTable";
 import UpdateOrderModal from "../components/UpdateOrderModal";
 
 import { getOrders, createOrder, updateOrder, deleteOrder as deleteOrderApi } from "../services/orderService";
-import { getPromotions } from "../services/promotionService";
-import { getEvents } from "../../venue-event/services/eventService";
-import { getTicketCategories } from "../../artist-ticket-category/services/ticketCategoryService";
+import {
+  ORDER_PROMOTION_EVENTS,
+  ORDER_PROMOTION_PROMOTIONS,
+  ORDER_PROMOTION_TICKET_CATEGORIES,
+} from "../data/orderCheckoutData";
 
 import {
+  DEFAULT_SERVICE_FEE,
   PAYMENT_STATUS,
   ORDER_FILTER_OPTIONS,
 } from "../constants/orderConstants";
@@ -36,32 +39,44 @@ export default function OrderPage() {
   const role = (user?.role || "customer").toUpperCase();
 
   const [orders, setOrders] = useState([]);
-  const [promotions, setPromotions] = useState([]);
-  const [events, setEvents] = useState([]);
-  const [ticketCategories, setTicketCategories] = useState([]);
+  const [promotions] = useState(ORDER_PROMOTION_PROMOTIONS);
+  const [events] = useState(ORDER_PROMOTION_EVENTS);
   const [loading, setLoading] = useState(true);
 
-  const [selectedEventId, setSelectedEventId] = useState(null);
+  const [selectedEventId, setSelectedEventId] = useState(
+    ORDER_PROMOTION_EVENTS[0]?.id || null
+  );
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedSeatIds, setSelectedSeatIds] = useState([]);
   const [appliedPromo, setAppliedPromo] = useState(null);
 
   useEffect(() => {
-    Promise.all([getOrders(), getPromotions(), getEvents()])
-      .then(([ordersData, promoData, eventsData]) => {
-        setOrders(ordersData);
-        setPromotions(promoData);
-        setEvents(eventsData);
-        if (eventsData.length > 0) setSelectedEventId(eventsData[0].id);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+    let cancelled = false;
 
-  useEffect(() => {
-    if (!selectedEventId) { setTicketCategories([]); return; }
-    getTicketCategories(selectedEventId).then(setTicketCategories);
-  }, [selectedEventId]);
+    async function loadOrders() {
+      try {
+        const ordersData = await getOrders(user);
+        if (!cancelled) {
+          setOrders(ordersData);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          alert(error.message);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadOrders();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -71,6 +86,10 @@ export default function OrderPage() {
   const [orderToDelete, setOrderToDelete] = useState(null);
 
   const isReservedSeating = false;
+  const ticketCategories = useMemo(
+    () => ORDER_PROMOTION_TICKET_CATEGORIES[selectedEventId] || [],
+    [selectedEventId]
+  );
 
   const selectedEvent = events.find((e) => e.id === selectedEventId) || null;
   const selectedCategory = ticketCategories.find((c) => c.id === selectedCategoryId) || null;
@@ -79,7 +98,7 @@ export default function OrderPage() {
     price: selectedCategory?.price || 0,
     quantity,
     promo: appliedPromo,
-    serviceFee: 5000,
+    serviceFee: DEFAULT_SERVICE_FEE,
   });
 
   const visibleOrders = useMemo(() => {
@@ -125,15 +144,24 @@ export default function OrderPage() {
 
     const seatValidation = validateSeatSelection({ selectedSeats: selectedSeatIds, quantity, isReservedSeating });
     if (!seatValidation.isValid) { alert(seatValidation.message); return; }
+    if (!selectedEventId || !selectedCategoryId) {
+      alert("Pilih event dan kategori tiket terlebih dahulu.");
+      return;
+    }
 
     try {
       const newOrder = await createOrder({
         customer_id: user?.customer_id || null,
-        total_amount: orderTotal.total,
-        payment_status: "Pending",
-        promotion_id: appliedPromo?.promotionId || null,
-      });
+        event_id: selectedEventId,
+        category_id: selectedCategoryId,
+        quantity: Number(quantity),
+        seat_ids: selectedSeatIds,
+        promo_code: appliedPromo?.promoCode || null,
+      }, user);
       setOrders((prev) => [newOrder, ...prev]);
+      setAppliedPromo(null);
+      setSelectedSeatIds([]);
+      setQuantity(1);
     } catch (err) {
       alert(err.message);
     }
@@ -144,7 +172,7 @@ export default function OrderPage() {
 
   const handleUpdateOrder = async (updatedOrder) => {
     try {
-      const saved = await updateOrder(updatedOrder.id, updatedOrder);
+      const saved = await updateOrder(updatedOrder.id, updatedOrder, user);
       setOrders((prev) => prev.map((o) => (o.id === saved.id ? saved : o)));
     } catch (err) {
       alert(err.message);
@@ -155,7 +183,7 @@ export default function OrderPage() {
   const handleDeleteOrder = async () => {
     if (!orderToDelete) return;
     try {
-      await deleteOrderApi(orderToDelete.id);
+      await deleteOrderApi(orderToDelete.id, user);
       setOrders((prev) => prev.filter((o) => o.id !== orderToDelete.id));
     } catch (err) {
       alert(err.message);
@@ -290,7 +318,7 @@ export default function OrderPage() {
                 price={selectedCategory?.price || 0}
                 quantity={Number(quantity) || 0}
                 promo={appliedPromo}
-                serviceFee={5000}
+                serviceFee={DEFAULT_SERVICE_FEE}
                 onCheckout={handleCheckout}
               />
             </div>
