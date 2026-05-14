@@ -1,85 +1,107 @@
-# React + Vite
+# TikTakTuk
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Monorepo ini berisi:
 
-Currently, two official plugins are available:
+- Frontend `React + Vite + Tailwind CSS`
+- Backend `Elysia + Bun + TypeScript`
+- Database `PostgreSQL` dengan query `raw SQL` via `pg`
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Arsitektur development:
 
-## React Compiler
+```text
+React Frontend (Vite)
+        ↓ HTTP / REST API
+Elysia Backend (Bun)
+        ↓ raw SQL with pg
+PostgreSQL
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Port lokal default:
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
-
-
-# 🎟️ TikTakTuk Frontend (TK03)
-
----
+- Frontend: `http://localhost:5173`
+- Backend: `http://localhost:3000`
 
 ## Tech Stack
 
-- **React**
-- **Vite**
-- **React Router DOM** 
-- **Tailwind CSS**
-- **Lucide React**
-- **clsx**
+### Frontend
 
----
+- `React`
+- `Vite`
+- `React Router DOM`
+- `Tailwind CSS`
+- `Lucide React`
+- `clsx`
+
+### Backend
+
+- `Elysia`
+- `@elysiajs/cors`
+- `Bun`
+- `TypeScript`
+- `pg`
+- `PostgreSQL`
 
 ## Prerequisites
 
-Sebelum menjalankan project ini, pastikan komputer sudah memiliki:
+Sebelum menjalankan project ini, install:
 
-- **Node.js** (disarankan versi **LTS**, minimal v18+)
-- **npm** (biasanya ikut terpasang bersama Node.js)
-- **Git**
+- `Git`
+- `Node.js` versi LTS
+- `npm`
+- `Bun`
+- `PostgreSQL` atau akses ke database PostgreSQL online
 
----
+Yang wajib untuk backend:
 
-# 🛠️ Instalasi 
+- `DATABASE_URL`
+- File `.env` untuk backend
 
-## 1) Install Git
-
-### macOS
-```bash
-brew install git
-git --version
-````
+## Installation by Platform
 
 ### Windows
 
-Unduh installer Git dari:
+Install Git:
+
+```powershell
+git --version
+```
+
+Download jika belum ada:
 
 ```text
 https://git-scm.com/downloads/win
 ```
 
-Lalu cek di **Command Prompt** / **PowerShell**:
+Install Node.js LTS, lalu cek:
+
+```powershell
+node -v
+npm -v
+```
+
+Download jika belum ada:
+
+```text
+https://nodejs.org/
+```
+
+Install Bun:
+
+```powershell
+powershell -c "irm bun.sh/install.ps1 | iex"
+bun -v
+```
+
+### macOS
+
+Install Git:
 
 ```bash
+brew install git
 git --version
 ```
 
-### Linux (Ubuntu/Debian)
-
-```bash
-sudo apt update
-sudo apt install -y git
-git --version
-```
-
----
-
-## 2) Install Node.js dan npm
-
-## 🍎 macOS
-
-### Opsi A — Homebrew (recommended)
+Install Node.js:
 
 ```bash
 brew install node
@@ -87,56 +109,39 @@ node -v
 npm -v
 ```
 
-### Opsi B — Installer resmi
-
-Unduh dari:
-
-```text
-https://nodejs.org/
-```
-
-Pilih **LTS** lalu install seperti biasa.
-
-Cek:
+Install Bun:
 
 ```bash
+curl -fsSL https://bun.sh/install | bash
+source ~/.zshrc
+bun -v
+```
+
+Kalau pakai `bash`:
+
+```bash
+source ~/.bashrc
+bun -v
+```
+
+### Linux (Arch btw)
+
+Install Git:
+
+```bash
+sudo pacman -Syu --noconfirm git
+git --version
+```
+
+Install Node.js dan npm:
+
+```bash
+sudo pacman -S --noconfirm nodejs npm
 node -v
 npm -v
 ```
 
----
-
-## 🪟 Windows
-
-Unduh installer resmi dari:
-
-```text
-https://nodejs.org/
-```
-
-Pilih **LTS (Recommended)**, install, lalu cek di **Command Prompt** atau **PowerShell**:
-
-```bash
-node -v
-npm -v
-```
-
-Kalau belum terbaca, restart terminal atau restart komputer.
-
----
-
-## 🐧 Linux (Ubuntu/Debian)
-
-### Opsi A — Install langsung dari apt
-
-```bash
-sudo apt update
-sudo apt install -y nodejs npm
-node -v
-npm -v
-```
-
-### Opsi B — Install via NVM (recommended)
+Atau via `nvm`:
 
 ```bash
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
@@ -147,112 +152,200 @@ node -v
 npm -v
 ```
 
-Kalau shell kamu pakai zsh:
+Install Bun:
 
 ```bash
-source ~/.zshrc
+curl -fsSL https://bun.sh/install | bash
+source ~/.bashrc
+bun -v
 ```
 
----
-
-# 🚀 Menjalankan Project dari Repository
-
-## 1) Clone repository
+## Clone Repository
 
 ```bash
 git clone https://github.com/TikTakTuk-D-D4/TK03-TikTakTuk-D4-Frontend.git
 cd tiktaktuk
 ```
 
-## 2) Install semua dependency
+Kalau repo lokal sudah ada, cukup lakukan pull terbaru:
+
+```bash
+git pull
+```
+
+## Install Dependencies
+
+Project ini punya dua environment dependency:
+
+- Root folder untuk frontend React
+- Folder `Backend` untuk backend Bun + Elysia
+
+### Frontend
+
+Install dependency frontend dari root project:
 
 ```bash
 npm install
 ```
 
-## 3) Jalankan development server
+Dependency utama frontend yang dipakai:
+
+```bash
+npm install react react-dom react-router-dom lucide-react clsx
+npm install -D vite tailwindcss @tailwindcss/vite
+```
+
+### Backend
+
+Masuk ke folder backend lalu install dependency:
+
+```bash
+cd Backend
+bun install
+```
+
+Dependency backend yang dipakai saat ini:
+
+```bash
+bun add elysia @elysiajs/cors pg
+bun add -d typescript bun-types @types/pg
+```
+
+Kalau semua package sudah ada di `package.json`, `bun install` saja sudah cukup.
+
+## Environment Setup
+
+Buat file `.env` di folder `Backend`.
+
+Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+macOS/Linux:
+
+```bash
+cp .env.example .env
+```
+
+Kalau belum ada `.env.example`, buat `.env` manual dengan isi seperti ini:
+
+```env
+PORT=3000
+DATABASE_URL=postgresql://username:password@host:5432/database
+FRONTEND_URL=http://localhost:5173
+JWT_SECRET=change-this-secret
+NODE_ENV=development
+```
+
+Penjelasan variabel:
+
+- `PORT`: port backend
+- `DATABASE_URL`: connection string PostgreSQL
+- `FRONTEND_URL`: URL frontend untuk CORS
+- `JWT_SECRET`: secret auth jika dipakai
+- `NODE_ENV`: `development` atau `production`
+
+Untuk frontend, jika diperlukan, arahkan API ke backend:
+
+```env
+VITE_API_URL=http://localhost:3000
+```
+
+## Running the Project
+
+Frontend dan backend jalan terpisah, jadi biasanya perlu dua terminal.
+
+### Jalankan Frontend
+
+Dari root project:
 
 ```bash
 npm run dev
 ```
 
-## 4) Buka di browser
+Buka:
 
 ```text
 http://localhost:5173
 ```
 
----
+### Jalankan Backend
 
-# 📦 Semua langkah install dependency dasar sekaligus
-
-Kalau mau install satu per satu seperti di atas tidak masalah.
-Kalau mau sekaligus, bisa pakai:
+Dari folder `Backend`:
 
 ```bash
-npm install react-router-dom lucide-react clsx
-npm install -D tailwindcss @tailwindcss/vite
+bun run dev
 ```
 
----
+Target backend lokal:
 
-# ⚙️ Menjalankan Project
-
-Setelah semua dependency terpasang:
-
-```bash
-npm run dev
+```text
+http://localhost:3000
 ```
 
-Untuk menghentikan server:
+## Build Frontend
 
-```bash
-Ctrl + C
-```
-
----
-
-# 🧪 Build Project
-
-Untuk build production:
+Build production frontend:
 
 ```bash
 npm run build
 ```
 
-Untuk preview hasil build:
+Preview hasil build:
 
 ```bash
 npm run preview
 ```
 
----
+## Backend Notes
 
-# 👥 Pembagian Branch
+Backend ini mengikuti requirement TK04:
 
-* `feat/auth-dashboard`
-* `feat/venue-event`
-* `feat/artist-ticket-category`
-* `feat/order-promotion`
-* `feat/ticket-seat`
+- memakai `raw SQL`
+- tidak memakai ORM
+- database target adalah `PostgreSQL`
+- error dari database sebaiknya diteruskan ke frontend tanpa diubah ulang
 
+Jangan pakai:
 
-# ⚠️ Troubleshooting
+- `Prisma`
+- `Sequelize`
+- `TypeORM`
+- `Drizzle ORM`
+- ORM lain
 
-## `node` atau `npm` tidak dikenali
+## Branch Ownership
 
-Pastikan Node.js sudah terinstall dan terminal sudah direstart.
+- `feat/auth-dashboard`
+- `feat/venue-event`
+- `feat/artist-ticket-category`
+- `feat/order-promotion`
+- `feat/ticket-seat`
 
-Cek:
+## Troubleshooting
+
+### `node`, `npm`, atau `bun` tidak dikenali
+
+Cek apakah semua runtime sudah terinstall dan terminal sudah direstart:
 
 ```bash
 node -v
 npm -v
+bun -v
 ```
 
----
+### Dependency backend belum terpasang
 
-## Jika port 5173 sudah dipakai
+Masuk ke folder backend lalu install ulang:
+
+```bash
+cd Backend
+bun install
+```
+
+### Port frontend bentrok
 
 Jalankan:
 
@@ -260,43 +353,11 @@ Jalankan:
 npm run dev -- --port 5174
 ```
 
-Lalu buka:
+### Backend tidak bisa connect ke database
 
-```text
-http://localhost:5174
-```
+Periksa:
 
----
-
-## Dependency gagal install
-
-Coba hapus `node_modules` dan lock file, lalu install ulang:
-
-### macOS / Linux
-
-```bash
-rm -rf node_modules package-lock.json
-npm install
-```
-
-### Windows PowerShell
-
-```bash
-Remove-Item -Recurse -Force node_modules
-Remove-Item package-lock.json
-npm install
-```
-
----
-
-# ✅ Quick Start
-
-Kalau kamu sudah punya Node.js dan Git, langkah tercepatnya:
-
-```bash
-git clone https://github.com/TikTakTuk-D-D4/TK03-TikTakTuk-D4-Frontend.git
-cd tiktaktuk
-npm install
-npm run dev
-```
-
+- `DATABASE_URL` valid
+- database PostgreSQL aktif
+- IP dan credential database benar
+- `FRONTEND_URL` sesuai origin frontend
