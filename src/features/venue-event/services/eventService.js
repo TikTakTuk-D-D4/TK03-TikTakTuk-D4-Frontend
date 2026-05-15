@@ -1,4 +1,4 @@
-import { apiFetch, API_URL } from "../../../lib/api";
+import { apiFetch, parseJsonSafe } from "../../../lib/api";
 
 const mapEvent = (e) => {
   const dt = e.event_datetime ? new Date(e.event_datetime) : null;
@@ -19,14 +19,16 @@ const mapEvent = (e) => {
 };
 
 export const getEvents = async () => {
-  const res = await fetch(`${API_URL}/events`);
-  const data = await res.json();
+  const res = await apiFetch("/events");
+  const data = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(data?.message || "Gagal memuat event.");
   return Array.isArray(data) ? data.map(mapEvent) : [];
 };
 
 export const getEventById = async (id) => {
-  const res = await fetch(`${API_URL}/events/${id}`);
-  const data = await res.json();
+  const res = await apiFetch(`/events/${id}`);
+  const data = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(data?.message || "Gagal memuat detail event.");
   return mapEvent(data);
 };
 
@@ -43,8 +45,8 @@ export const createEvent = async (data) => {
       event_datetime,
     }),
   });
-  const result = await res.json();
-  if (!res.ok) throw new Error(result.message);
+  const result = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(result?.message || "Gagal menyimpan event.");
   return mapEvent(result);
 };
 
@@ -60,15 +62,15 @@ export const updateEvent = async (id, data) => {
       event_datetime,
     }),
   });
-  const result = await res.json();
-  if (!res.ok) throw new Error(result.message);
+  const result = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(result?.message || "Gagal menyimpan event.");
   return mapEvent(result);
 };
 
 export const deleteEvent = async (id) => {
   const res = await apiFetch(`/events/${id}`, { method: "DELETE" });
-  const result = await res.json();
-  if (!res.ok) throw new Error(result.message);
+  const result = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(result?.message || "Gagal menghapus event.");
   return result;
 };
 

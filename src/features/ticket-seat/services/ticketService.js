@@ -1,4 +1,4 @@
-import { apiFetch, API_URL } from "../../../lib/api";
+import { apiFetch, parseJsonSafe } from "../../../lib/api";
 
 const paymentToStatus = { Paid: "active", Pending: "pending", Cancelled: "cancelled" };
 
@@ -32,8 +32,9 @@ export async function getTickets(query = {}) {
   if (query.customer_id) params.set("customer_id", query.customer_id);
   if (query.event_id) params.set("event_id", query.event_id);
   const qs = params.toString();
-  const res = await fetch(`${API_URL}/tickets${qs ? `?${qs}` : ""}`);
-  const data = await res.json();
+  const res = await apiFetch(`/tickets${qs ? `?${qs}` : ""}`);
+  const data = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(data?.message || "Gagal memuat tiket.");
   return Array.isArray(data) ? data.map(mapTicket) : [];
 }
 
@@ -46,7 +47,7 @@ export async function createTicket(payload) {
       seat_id: payload.seat_id || null,
     }),
   });
-  const result = await res.json();
+  const result = await parseJsonSafe(res);
   if (!res.ok) throw new Error(result.message || "Gagal membuat tiket.");
   return result;
 }
@@ -56,20 +57,21 @@ export async function updateTicketStatus(id, status, seat_id) {
     method: "PUT",
     body: JSON.stringify({ seat_id }),
   });
-  const result = await res.json();
+  const result = await parseJsonSafe(res);
   if (!res.ok) throw new Error(result.message || "Gagal memperbarui tiket.");
   return result;
 }
 
 export async function deleteTicket(id) {
   const res = await apiFetch(`/tickets/${id}`, { method: "DELETE" });
-  const result = await res.json();
+  const result = await parseJsonSafe(res);
   if (!res.ok) throw new Error(result.message || "Gagal menghapus tiket.");
   return true;
 }
 
 export async function getCustomers() {
-  const res = await fetch(`${API_URL}/auth/customers`);
-  const data = await res.json();
+  const res = await apiFetch("/auth/customers");
+  const data = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(data?.message || "Gagal memuat customer.");
   return Array.isArray(data) ? data : [];
 }

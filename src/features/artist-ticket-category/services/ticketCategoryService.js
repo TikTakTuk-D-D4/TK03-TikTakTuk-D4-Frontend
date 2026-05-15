@@ -1,4 +1,4 @@
-import { apiFetch, API_URL } from "../../../lib/api";
+import { apiFetch, parseJsonSafe } from "../../../lib/api";
 
 const mapCategory = (c) => ({
   id: c.category_id,
@@ -10,11 +10,12 @@ const mapCategory = (c) => ({
 });
 
 export async function getTicketCategories(event_id) {
-  const url = event_id
-    ? `${API_URL}/ticket-categories?event_id=${event_id}`
-    : `${API_URL}/ticket-categories`;
-  const res = await fetch(url);
-  const data = await res.json();
+  const path = event_id
+    ? `/ticket-categories?event_id=${event_id}`
+    : "/ticket-categories";
+  const res = await apiFetch(path);
+  const data = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(data?.message || "Gagal memuat kategori tiket.");
   return Array.isArray(data) ? data.map(mapCategory) : [];
 }
 
@@ -28,8 +29,8 @@ export async function createTicketCategory(payload) {
       quota: Number(payload.quota),
     }),
   });
-  const result = await res.json();
-  if (!res.ok) throw new Error(result.message);
+  const result = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(result?.message || "Gagal menyimpan kategori tiket.");
   return mapCategory(result);
 }
 
@@ -42,21 +43,22 @@ export async function updateTicketCategory(id, payload) {
       quota: Number(payload.quota),
     }),
   });
-  const result = await res.json();
-  if (!res.ok) throw new Error(result.message);
+  const result = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(result?.message || "Gagal menyimpan kategori tiket.");
   return mapCategory(result);
 }
 
 export async function deleteTicketCategory(id) {
   const res = await apiFetch(`/ticket-categories/${id}`, { method: "DELETE" });
-  const result = await res.json();
-  if (!res.ok) throw new Error(result.message);
+  const result = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(result?.message || "Gagal menghapus kategori tiket.");
   return true;
 }
 
 export async function getEvents() {
-  const res = await fetch(`${API_URL}/events`);
-  const data = await res.json();
+  const res = await apiFetch("/events");
+  const data = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(data?.message || "Gagal memuat event.");
   return Array.isArray(data)
     ? data.map((e) => ({
         id: e.event_id,
@@ -69,8 +71,9 @@ export async function getEvents() {
 }
 
 export async function getVenues() {
-  const res = await fetch(`${API_URL}/venues`);
-  const data = await res.json();
+  const res = await apiFetch("/venues");
+  const data = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(data?.message || "Gagal memuat venue.");
   return Array.isArray(data)
     ? data.map((v) => ({
         id: v.venue_id,

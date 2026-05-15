@@ -1,4 +1,4 @@
-import { apiFetch, API_URL } from "../../../lib/api";
+import { apiFetch, parseJsonSafe } from "../../../lib/api";
 
 const mapVenue = (v) => ({
   id: v.venue_id,
@@ -11,14 +11,20 @@ const mapVenue = (v) => ({
 });
 
 export const getVenues = async () => {
-  const res = await fetch(`${API_URL}/venues`);
-  const data = await res.json();
+  const res = await apiFetch("/venues");
+  const data = await parseJsonSafe(res);
+  if (!res.ok) {
+    throw new Error(data?.message || "Gagal memuat venue.");
+  }
   return Array.isArray(data) ? data.map(mapVenue) : [];
 };
 
 export const getVenueById = async (id) => {
-  const res = await fetch(`${API_URL}/venues/${id}`);
-  const data = await res.json();
+  const res = await apiFetch(`/venues/${id}`);
+  const data = await parseJsonSafe(res);
+  if (!res.ok) {
+    throw new Error(data?.message || "Gagal memuat venue.");
+  }
   return mapVenue(data);
 };
 
@@ -32,8 +38,8 @@ export const createVenue = async (data) => {
       capacity: data.capacity,
     }),
   });
-  const result = await res.json();
-  if (!res.ok) throw new Error(result.message);
+  const result = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(result?.message || "Gagal menyimpan venue.");
   return mapVenue(result);
 };
 
@@ -47,15 +53,15 @@ export const updateVenue = async (id, data) => {
       capacity: data.capacity,
     }),
   });
-  const result = await res.json();
-  if (!res.ok) throw new Error(result.message);
+  const result = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(result?.message || "Gagal menyimpan venue.");
   return mapVenue(result);
 };
 
 export const deleteVenue = async (id) => {
   const res = await apiFetch(`/venues/${id}`, { method: "DELETE" });
-  const result = await res.json();
-  if (!res.ok) throw new Error(result.message);
+  const result = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(result?.message || "Gagal menyimpan venue.");
   return result;
 };
 

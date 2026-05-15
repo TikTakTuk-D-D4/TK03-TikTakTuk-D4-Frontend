@@ -1,4 +1,4 @@
-import { apiFetch, API_URL } from "../../../lib/api";
+import { apiFetch, parseJsonSafe } from "../../../lib/api";
 
 const mapSeat = (s) => ({
   seat_id: s.seat_id,
@@ -13,9 +13,10 @@ const mapSeat = (s) => ({
 });
 
 export async function getSeats(venue_id) {
-  const url = venue_id ? `${API_URL}/seats?venue_id=${venue_id}` : `${API_URL}/seats`;
-  const res = await fetch(url);
-  const data = await res.json();
+  const path = venue_id ? `/seats?venue_id=${venue_id}` : "/seats";
+  const res = await apiFetch(path);
+  const data = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(data?.message || "Gagal memuat kursi.");
   return Array.isArray(data) ? data.map(mapSeat) : [];
 }
 
@@ -29,7 +30,7 @@ export async function createSeat(payload) {
       seat_number: payload.seat_number,
     }),
   });
-  const result = await res.json();
+  const result = await parseJsonSafe(res);
   if (!res.ok) throw new Error(result.message || "Gagal membuat kursi.");
   return mapSeat(result);
 }
@@ -44,14 +45,14 @@ export async function updateSeat(id, payload) {
       seat_number: payload.seat_number,
     }),
   });
-  const result = await res.json();
+  const result = await parseJsonSafe(res);
   if (!res.ok) throw new Error(result.message || "Gagal memperbarui kursi.");
   return mapSeat(result);
 }
 
 export async function deleteSeat(id) {
   const res = await apiFetch(`/seats/${id}`, { method: "DELETE" });
-  const result = await res.json();
+  const result = await parseJsonSafe(res);
   if (!res.ok) throw new Error(result.message || "Gagal menghapus kursi.");
   return true;
 }

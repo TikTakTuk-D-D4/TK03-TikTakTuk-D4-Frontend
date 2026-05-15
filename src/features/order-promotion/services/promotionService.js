@@ -1,4 +1,4 @@
-import { apiFetch, API_URL } from "../../../lib/api";
+import { apiFetch, parseJsonSafe } from "../../../lib/api";
 
 const mapPromotion = (p) => ({
   promotionId: p.promotion_id,
@@ -11,8 +11,9 @@ const mapPromotion = (p) => ({
 });
 
 export async function getPromotions() {
-  const res = await fetch(`${API_URL}/promotions`);
-  const data = await res.json();
+  const res = await apiFetch("/promotions");
+  const data = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(data?.message || "Gagal memuat promosi.");
   return Array.isArray(data) ? data.map(mapPromotion) : [];
 }
 
@@ -28,8 +29,8 @@ export async function createPromotion(payload) {
       end_date: payload.endDate,
     }),
   });
-  const result = await res.json();
-  if (!res.ok) throw new Error(result.message);
+  const result = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(result?.message || "Gagal menyimpan promosi.");
   return mapPromotion(result);
 }
 
@@ -45,21 +46,21 @@ export async function updatePromotion(id, payload) {
       end_date: payload.endDate,
     }),
   });
-  const result = await res.json();
-  if (!res.ok) throw new Error(result.message);
+  const result = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(result?.message || "Gagal menyimpan promosi.");
   return mapPromotion(result);
 }
 
 export async function deletePromotion(id) {
   const res = await apiFetch(`/promotions/${id}`, { method: "DELETE" });
-  const result = await res.json();
-  if (!res.ok) throw new Error(result.message);
+  const result = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(result?.message || "Gagal menghapus promosi.");
   return true;
 }
 
 export async function getPromotionByCode(code) {
-  const res = await fetch(`${API_URL}/promotions/code/${code}`);
-  const result = await res.json();
-  if (!res.ok) throw new Error(result.message);
+  const res = await apiFetch(`/promotions/code/${code}`);
+  const result = await parseJsonSafe(res);
+  if (!res.ok) throw new Error(result?.message || "Gagal memuat promo.");
   return mapPromotion(result);
 }
