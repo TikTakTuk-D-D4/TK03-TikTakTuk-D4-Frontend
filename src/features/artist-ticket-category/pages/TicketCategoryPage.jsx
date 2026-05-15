@@ -87,7 +87,7 @@ function TicketCategoryPage() {
 
   const canManageRow = (category) => {
     if (role === "administrator") return true;
-    if (role === "organizer") return category.organizerId === user?.id;
+    if (role === "organizer") return category.organizerId === user?.organizer_id;
     return false;
   };
 
@@ -98,7 +98,7 @@ function TicketCategoryPage() {
   const openCreateModal = () => {
     if (!showActions) return;
     if (role === "organizer") {
-      const ownEvents = events.filter((e) => e.organizerId === user?.id);
+      const ownEvents = events.filter((e) => e.organizerId === user?.organizer_id);
       if (!ownEvents.length) {
         toast("Organizer ini belum memiliki event untuk dikelola.", "error");
         return;
@@ -129,7 +129,7 @@ function TicketCategoryPage() {
 
   const handleSubmit = async (payload) => {
     const selectedEvent = eventById.get(payload.eventId);
-    if (role === "organizer" && selectedEvent?.organizerId !== user?.id) {
+    if (role === "organizer" && selectedEvent?.organizerId !== user?.organizer_id) {
       toast("Organizer hanya boleh mengelola kategori untuk event miliknya.", "error");
       return false;
     }
