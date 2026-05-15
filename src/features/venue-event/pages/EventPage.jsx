@@ -5,6 +5,8 @@ import { getVenues } from "../services/venueService";
 import { useAuth } from "../../../context/AuthContext";
 import { getTicketCategories } from "../../artist-ticket-category/services/ticketCategoryService";
 import { createOrder } from "../../order-promotion/services/orderService";
+import { getPromotionByCode } from "../../order-promotion/services/promotionService";
+import { normalizePromoCode } from "../../order-promotion/utils/promotionUtils";
 import { Card, CardContent } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
@@ -31,6 +33,10 @@ function EventPage() {
   const [ticketCategories, setTicketCategories] = useState([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [quantity, setQuantity] = useState(1);
+  const [promoCode, setPromoCode] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState(null);
+  const [promoMessage, setPromoMessage] = useState(null);
+  const [applyingPromo, setApplyingPromo] = useState(false);
 
   useEffect(() => {
     Promise.all([getEvents(), getVenues()])
@@ -51,6 +57,22 @@ function EventPage() {
   const estimatedTotal = useMemo(
     () => Number(selectedCategory?.price || 0) * Math.max(Number(quantity) || 0, 0),
     [selectedCategory, quantity]
+  );
+
+  const discountAmount = useMemo(() => {
+    if (!appliedPromo) return 0;
+
+    const subtotal = Number(estimatedTotal) || 0;
+    if (String(appliedPromo.discountType || "").toUpperCase() === "PERCENTAGE") {
+      return Math.min(subtotal * (Number(appliedPromo.discountValue || 0) / 100), subtotal);
+    }
+
+    return Math.min(Number(appliedPromo.discountValue || 0), subtotal);
+  }, [appliedPromo, estimatedTotal]);
+
+  const finalTotal = useMemo(
+    () => Math.max(Number(estimatedTotal || 0) - Number(discountAmount || 0), 0),
+    [discountAmount, estimatedTotal]
   );
 
   const filteredEvents = events.filter((event) => {
@@ -74,6 +96,9 @@ function EventPage() {
   const openCheckout = async (eventItem) => {
     setCheckoutLoading(true);
     setCheckoutError("");
+    setPromoCode("");
+    setAppliedPromo(null);
+    setPromoMessage(null);
     setCheckoutOpen(true);
     setSelectedEvent(eventItem);
     setSelectedCategoryId("");
@@ -96,6 +121,75 @@ function EventPage() {
     setSelectedCategoryId("");
     setSelectedEvent(null);
     setQuantity(1);
+    setPromoCode("");
+    setAppliedPromo(null);
+    setPromoMessage(null);
+    setApplyingPromo(false);
+  };
+
+  const handlePromoCodeChange = (event) => {
+    const nextCode = event.target.value;
+    setPromoCode(nextCode);
+
+    if (promoMessage) {
+      setPromoMessage(null);
+    }
+
+    if (appliedPromo && normalizePromoCode(nextCode) !== appliedPromo.promoCode) {
+      setAppliedPromo(null);
+    }
+  };
+
+  const handleApplyPromo = async () => {
+    const normalizedCode = normalizePromoCode(promoCode);
+
+    if (!normalizedCode) {
+      setPromoMessage({ type: "danger", text: "Kode promo wajib diisi." });
+      setAppliedPromo(null);
+      return;
+    }
+
+    setApplyingPromo(true);
+    setPromoMessage(null);
+
+    try {
+      const promo = await getPromotionByCode(normalizedCode);
+      const now = new Date();
+      const startDate = promo.startDate ? new Date(promo.startDate) : null;
+      const endDate = promo.endDate ? new Date(promo.endDate) : null;
+      const usageLimit = Number(promo.usageLimit || 0);
+      const usedCount = Number(promo.usedCount || 0);
+
+      if (startDate && now < startDate) {
+        throw new Error("Promo belum dapat digunakan.");
+      }
+
+      if (endDate && now > endDate) {
+        throw new Error("Promo sudah berakhir.");
+      }
+
+      if (usageLimit > 0 && usedCount >= usageLimit) {
+        throw new Error("Kuota promo sudah habis.");
+      }
+
+      setAppliedPromo(promo);
+      setPromoCode(promo.promoCode);
+      setPromoMessage({ type: "success", text: `${promo.promoCode} diterapkan.` });
+    } catch (err) {
+      setAppliedPromo(null);
+      setPromoMessage({
+        type: "danger",
+        text: err.message || "Kode promo tidak dapat digunakan.",
+      });
+    } finally {
+      setApplyingPromo(false);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setPromoCode("");
+    setAppliedPromo(null);
+    setPromoMessage(null);
   };
 
   const handleCheckout = async () => {
@@ -126,6 +220,8 @@ function EventPage() {
           category_id: selectedCategoryId,
           quantity: safeQuantity,
           seat_ids: [],
+          promo_code: appliedPromo?.promoCode,
+          total_amount: finalTotal,
         },
         user
       );
@@ -324,6 +420,60 @@ function EventPage() {
                   </label>
 
                   <div className="rounded-[14px] border border-line-soft bg-surface p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-text">Kode Promo</p>
+                        <p className="mt-1 text-xs text-muted">
+                          Gunakan promo aktif untuk mendapatkan potongan harga.
+                        </p>
+                      </div>
+                      {appliedPromo ? (
+                        <span className="rounded-full border border-ok/25 bg-ok/10 px-3 py-1 text-[11px] font-medium text-ok">
+                          {appliedPromo.promoCode} diterapkan
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
+                      <Input
+                        placeholder="Masukkan kode promo"
+                        value={promoCode}
+                        onChange={handlePromoCodeChange}
+                        className="uppercase"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={handleApplyPromo}
+                        disabled={applyingPromo || !promoCode.trim()}
+                        className="border border-line-soft bg-white/[0.03] hover:border-line hover:bg-white/[0.07]"
+                      >
+                        {applyingPromo ? "Memeriksa..." : "Terapkan"}
+                      </Button>
+                    </div>
+
+                    {promoMessage ? (
+                      <p
+                        className={`mt-3 text-xs ${
+                          promoMessage.type === "danger" ? "text-danger" : "text-ok"
+                        }`}
+                      >
+                        {promoMessage.text}
+                      </p>
+                    ) : null}
+
+                    {appliedPromo ? (
+                      <button
+                        type="button"
+                        onClick={handleRemovePromo}
+                        className="mt-3 text-xs font-medium text-muted transition hover:text-danger"
+                      >
+                        Hapus promo
+                      </button>
+                    ) : null}
+                  </div>
+
+                  <div className="rounded-[14px] border border-line-soft bg-surface p-4">
                     <div className="flex items-center justify-between text-sm text-muted">
                       <span>Kategori</span>
                       <span>{selectedCategory?.name || "-"}</span>
@@ -336,11 +486,17 @@ function EventPage() {
                       <span>Jumlah</span>
                       <span>{Math.max(Number(quantity) || 0, 0)}</span>
                     </div>
+                    {appliedPromo ? (
+                      <div className="mt-3 flex items-center justify-between text-sm text-ok">
+                        <span>Diskon</span>
+                        <span>- {currencyFormat.format(discountAmount)}</span>
+                      </div>
+                    ) : null}
                     <div className="mt-4 border-t border-line-soft pt-4">
                       <div className="flex items-center justify-between">
                         <span className="text-base font-semibold text-text">Total</span>
                         <span className="font-display text-xl font-bold text-text">
-                          {currencyFormat.format(estimatedTotal)}
+                          {currencyFormat.format(finalTotal)}
                         </span>
                       </div>
                     </div>

@@ -38,6 +38,7 @@ function PromotionPage() {
   const [selectedPromotion, setSelectedPromotion] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [feedback, setFeedback] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!feedback) return undefined;
@@ -96,20 +97,24 @@ function PromotionPage() {
   const refresh = () => getPromotions().then(setPromotions);
 
   const handleSubmitPromotion = async (promotion) => {
+    setIsSubmitting(true);
     try {
       if (formMode === "create") {
         const created = await createPromotion(promotion);
         setPromotions((prev) => [created, ...prev]);
         setFeedback({ type: "success", title: "Promo berhasil dibuat", description: `${created.promoCode} sudah masuk ke daftar promosi.` });
+        closeFormModal();
       } else {
         await updatePromotion(promotion.promotionId, promotion);
         await refresh();
         setFeedback({ type: "success", title: "Promo berhasil diperbarui", description: `${promotion.promoCode} sudah diperbarui.` });
+        closeFormModal();
       }
     } catch (err) {
       setFeedback({ type: "danger", title: "Gagal", description: err.message });
+    } finally {
+      setIsSubmitting(false);
     }
-    closeFormModal();
   };
 
   const handleDeletePromotion = async () => {
@@ -269,6 +274,7 @@ function PromotionPage() {
           promotions={promotions}
           onClose={closeFormModal}
           onSubmit={handleSubmitPromotion}
+          isLoading={isSubmitting}
         />
       )}
 

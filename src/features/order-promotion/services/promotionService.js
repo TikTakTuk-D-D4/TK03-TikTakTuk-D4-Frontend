@@ -6,6 +6,7 @@ const mapPromotion = (p) => ({
   discountType: p.discount_type,
   discountValue: Number(p.discount_value),
   usageLimit: p.usage_limit,
+  usedCount: Number(p.used_count ?? p.usedCount ?? 0),
   startDate: p.start_date,
   endDate: p.end_date,
 });

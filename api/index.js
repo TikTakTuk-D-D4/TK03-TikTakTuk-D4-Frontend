@@ -497,6 +497,34 @@ async function getOrderRowById(db, id) {
   return rows[0] || null;
 }
 
+async function getPromotionRowById(db, id) {
+  const { rows } = await db.query(
+    `SELECT p.*,
+            COUNT(op.order_promotion_id)::int AS used_count
+     FROM promotion p
+     LEFT JOIN order_promotion op ON p.promotion_id = op.promotion_id
+     WHERE p.promotion_id = $1
+     GROUP BY p.promotion_id`,
+    [id]
+  );
+
+  return rows[0] || null;
+}
+
+async function getPromotionRowByCode(db, code) {
+  const { rows } = await db.query(
+    `SELECT p.*,
+            COUNT(op.order_promotion_id)::int AS used_count
+     FROM promotion p
+     LEFT JOIN order_promotion op ON p.promotion_id = op.promotion_id
+     WHERE UPPER(p.promo_code) = UPPER($1)
+     GROUP BY p.promotion_id`,
+    [code]
+  );
+
+  return rows[0] || null;
+}
+
 async function handleOrders(req, res, params) {
   const id = params[0];
 
@@ -565,19 +593,17 @@ async function handleOrders(req, res, params) {
         let finalTotal = Number(category.price) * safeQuantity;
 
         if (promo_code) {
-          const { rows: promoRows } = await client.query(
-            `SELECT * FROM promotion WHERE UPPER(promo_code) = UPPER($1) LIMIT 1`,
-            [promo_code]
-          );
+          const promo = await getPromotionRowByCode(client, promo_code);
 
-          if (promoRows.length === 0) {
+          if (!promo) {
             throw new Error('Kode promo tidak ditemukan.');
           }
 
-          const promo = promoRows[0];
           const now = new Date();
           const startDate = promo.start_date ? new Date(promo.start_date) : null;
           const endDate = promo.end_date ? new Date(promo.end_date) : null;
+          const usageLimit = Number(promo.usage_limit || 0);
+          const usedCount = Number(promo.used_count || 0);
 
           if (startDate && now < startDate) {
             throw new Error('Promo belum dapat digunakan.');
@@ -585,6 +611,10 @@ async function handleOrders(req, res, params) {
 
           if (endDate && now > endDate) {
             throw new Error('Promo sudah berakhir.');
+          }
+
+          if (usageLimit > 0 && usedCount >= usageLimit) {
+            throw new Error('Kuota promo sudah habis.');
           }
 
           if (String(promo.discount_type).toUpperCase() === 'PERCENTAGE') {
@@ -689,7 +719,14 @@ async function handlePromotions(req, res, params) {
   const [first, second] = params;
 
   if (!first && req.method === 'GET') {
-    const { rows } = await pool.query(`SELECT * FROM promotion ORDER BY promo_code`);
+    const { rows } = await pool.query(
+      `SELECT p.*,
+              COUNT(op.order_promotion_id)::int AS used_count
+       FROM promotion p
+       LEFT JOIN order_promotion op ON p.promotion_id = op.promotion_id
+       GROUP BY p.promotion_id
+       ORDER BY p.promo_code`
+    );
     return res.status(200).json(rows);
   }
 
@@ -702,25 +739,23 @@ async function handlePromotions(req, res, params) {
          VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6) RETURNING *`,
         [promo_code, discount_type, discount_value, usage_limit, start_date, end_date]
       );
-      return res.status(200).json(rows[0]);
+      const promotion = await getPromotionRowById(pool, rows[0].promotion_id);
+      return res.status(200).json(promotion || rows[0]);
     } catch (err) {
       return res.status(400).json({ message: `ERROR: ${err.message}` });
     }
   }
 
   if (first === 'code' && second && params.length === 2 && req.method === 'GET') {
-    const { rows } = await pool.query(
-      `SELECT * FROM promotion WHERE UPPER(promo_code) = UPPER($1)`,
-      [second]
-    );
-    if (rows.length === 0) return res.status(404).json({ message: 'Kode promo tidak ditemukan.' });
-    return res.status(200).json(rows[0]);
+    const promotion = await getPromotionRowByCode(pool, second);
+    if (!promotion) return res.status(404).json({ message: 'Kode promo tidak ditemukan.' });
+    return res.status(200).json(promotion);
   }
 
   if (first && params.length === 1 && req.method === 'GET') {
-    const { rows } = await pool.query(`SELECT * FROM promotion WHERE promotion_id = $1`, [first]);
-    if (rows.length === 0) return res.status(404).json({ message: 'Promotion tidak ditemukan.' });
-    return res.status(200).json(rows[0]);
+    const promotion = await getPromotionRowById(pool, first);
+    if (!promotion) return res.status(404).json({ message: 'Promotion tidak ditemukan.' });
+    return res.status(200).json(promotion);
   }
 
   if (first && params.length === 1 && req.method === 'PUT') {
@@ -731,7 +766,8 @@ async function handlePromotions(req, res, params) {
         `UPDATE promotion SET promo_code=$1, discount_type=$2, discount_value=$3, usage_limit=$4, start_date=$5, end_date=$6 WHERE promotion_id=$7 RETURNING *`,
         [promo_code, discount_type, discount_value, usage_limit, start_date, end_date, first]
       );
-      return res.status(200).json(rows[0]);
+      const promotion = await getPromotionRowById(pool, rows[0].promotion_id);
+      return res.status(200).json(promotion || rows[0]);
     } catch (err) {
       return res.status(400).json({ message: `ERROR: ${err.message}` });
     }
