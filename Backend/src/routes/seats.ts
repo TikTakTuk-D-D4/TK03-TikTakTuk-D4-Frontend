@@ -73,6 +73,31 @@ export const seatRoutes = new Elysia({ prefix: "/seats" })
     const denied = await requireRole(MANAGE_ROLES)({ request, set });
     if (denied) return denied;
     try {
+      const seatResult = await pool.query(
+        `SELECT s.section, s.row_number, s.seat_number,
+                EXISTS (
+                  SELECT 1
+                  FROM has_relationship hr
+                  WHERE hr.seat_id = s.seat_id
+                ) AS is_assigned
+         FROM seat s
+         WHERE s.seat_id = $1`,
+        [params.id]
+      );
+
+      if (seatResult.rows.length === 0) {
+        set.status = 404;
+        return { message: "Kursi tidak ditemukan." };
+      }
+
+      const seat = seatResult.rows[0];
+      if (seat.is_assigned) {
+        set.status = 400;
+        return {
+          message: `ERROR: Kursi ${seat.section} - Baris ${seat.row_number} No. ${seat.seat_number} tidak dapat dihapus karena sudah terisi.`,
+        };
+      }
+
       await pool.query(`DELETE FROM seat WHERE seat_id = $1`, [params.id]);
       return { success: true };
     } catch (err: any) {

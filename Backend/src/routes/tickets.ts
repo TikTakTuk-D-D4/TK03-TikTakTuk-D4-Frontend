@@ -56,9 +56,39 @@ export const ticketRoutes = new Elysia({ prefix: "/tickets" })
     const denied = await requireRole(MANAGE_ROLES)({ request, set });
     if (denied) return denied;
     const { tcategory_id, torder_id, seat_id } = body as any;
+    const client = await pool.connect();
     try {
+      await client.query("BEGIN");
+
+      const categoryResult = await client.query(
+        `SELECT category_name, quota
+         FROM ticket_category
+         WHERE category_id = $1
+         FOR UPDATE`,
+        [tcategory_id]
+      );
+
+      if (categoryResult.rows.length === 0) {
+        throw new Error("Kategori tiket tidak ditemukan.");
+      }
+
+      const category = categoryResult.rows[0];
+      const soldResult = await client.query(
+        `SELECT COUNT(*)::int AS sold_count
+         FROM ticket
+         WHERE tcategory_id = $1`,
+        [tcategory_id]
+      );
+
+      const soldCount = soldResult.rows[0].sold_count;
+      if (soldCount >= category.quota) {
+        throw new Error(
+          `Kuota kategori tiket ${category.category_name} sudah penuh. Tidak dapat membuat tiket baru.`
+        );
+      }
+
       const ticket_code = `TKT-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
-      const { rows } = await pool.query(
+      const { rows } = await client.query(
         `INSERT INTO ticket (ticket_id, ticket_code, tcategory_id, torder_id)
          VALUES (gen_random_uuid(), $1, $2, $3) RETURNING *`,
         [ticket_code, tcategory_id, torder_id]
@@ -66,16 +96,24 @@ export const ticketRoutes = new Elysia({ prefix: "/tickets" })
       const ticket = rows[0];
 
       if (seat_id) {
-        await pool.query(
+        await client.query(
           `INSERT INTO has_relationship (seat_id, ticket_id) VALUES ($1, $2)`,
           [seat_id, ticket.ticket_id]
         );
       }
 
+      await client.query("COMMIT");
       return ticket;
     } catch (err: any) {
+      try {
+        await client.query("ROLLBACK");
+      } catch {
+        // Ignore rollback error and keep original error response.
+      }
       set.status = 400;
       return { message: `ERROR: ${err.message}` };
+    } finally {
+      client.release();
     }
   })
   .put("/:id", async ({ request, params, body, set }) => {
