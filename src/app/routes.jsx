@@ -40,16 +40,14 @@ function RequireAuth({ children }) {
 function RequireRole({ roles, children }) {
   const user = getCurrentUser();
   if (!user) return <Navigate to="/login" replace />;
-  const normalizedRole = user.role === "administrator" ? "admin" : user.role;
-  if (!roles.includes(normalizedRole)) return <Navigate to="/dashboard" replace />;
+  if (!roles.includes(user.role)) return <Navigate to="/dashboard" replace />;
   return <PageLayout>{children}</PageLayout>;
 }
 
 function TicketRedirect() {
   const user = getCurrentUser();
   if (!user) return <Navigate to="/login" replace />;
-  const role = user.role === "administrator" ? "admin" : user.role;
-  if (role === "customer") return <Navigate to="/my-tickets" replace />;
+  if (user.role === "customer") return <Navigate to="/my-tickets" replace />;
   return <Navigate to="/manage-tickets" replace />;
 }
 
@@ -74,31 +72,31 @@ function AppRoutes() {
       {/* Hanya admin dan organizer */}
       <Route
         path="/venues/create"
-        element={<RequireRole roles={["admin", "organizer"]}><VenueFormPage /></RequireRole>}
+        element={<RequireRole roles={["administrator", "organizer"]}><VenueFormPage /></RequireRole>}
       />
       <Route
         path="/venues/edit/:id"
-        element={<RequireRole roles={["admin", "organizer"]}><VenueFormPage /></RequireRole>}
+        element={<RequireRole roles={["administrator", "organizer"]}><VenueFormPage /></RequireRole>}
       />
       <Route
         path="/events/:id/artists"
-        element={<RequireRole roles={["admin", "organizer"]}><EventArtistPage /></RequireRole>}
+        element={<RequireRole roles={["administrator", "organizer"]}><EventArtistPage /></RequireRole>}
       />
       <Route
         path="/events/create"
-        element={<RequireRole roles={["admin", "organizer"]}><EventFormPage /></RequireRole>}
+        element={<RequireRole roles={["administrator", "organizer"]}><EventFormPage /></RequireRole>}
       />
       <Route
         path="/events/edit/:id"
-        element={<RequireRole roles={["admin", "organizer"]}><EventFormPage /></RequireRole>}
+        element={<RequireRole roles={["administrator", "organizer"]}><EventFormPage /></RequireRole>}
       />
       <Route
         path="/manage-tickets"
-        element={<RequireRole roles={["admin", "organizer"]}><TicketPage /></RequireRole>}
+        element={<RequireRole roles={["administrator", "organizer"]}><TicketPage /></RequireRole>}
       />
       <Route
         path="/seats"
-        element={<RequireRole roles={["admin", "organizer"]}><SeatPage /></RequireRole>}
+        element={<RequireRole roles={["administrator", "organizer"]}><SeatPage /></RequireRole>}
       />
 
       {/* Redirect /tickets ke halaman yang sesuai */}
