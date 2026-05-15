@@ -9,7 +9,7 @@ const MAX_NAME = 50;
 
 function byRoleEvents(events, user) {
   if (user?.role === "organizer") {
-    return events.filter((eventItem) => eventItem.organizerId === user.id);
+    return events.filter((eventItem) => eventItem.organizerId === user.organizer_id);
   }
   return events;
 }

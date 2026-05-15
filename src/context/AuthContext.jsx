@@ -5,12 +5,11 @@ const AuthContext = createContext(null);
 
 function normalizeUser(user) {
   if (!user) return null;
-  const role = user.role === "administrator" ? "admin" : user.role;
   return {
     id: user.user_id || user.id,
     name: user.full_name || user.organizer_name || user.username,
     username: user.username,
-    role,
+    role: user.role,
     user_id: user.user_id || user.id,
     organizer_id: user.organizer_id,
     organizer_name: user.organizer_name,
