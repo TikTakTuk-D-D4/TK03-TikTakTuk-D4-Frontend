@@ -1,11 +1,13 @@
 import pool from '../../lib/db.js';
 import { cors, checkRole } from '../../lib/auth.js';
+import { getJsonBody } from '../../lib/parseBody.js';
+import { getRouteParams } from '../../lib/routeParams.js';
 
 export default async function handler(req, res) {
   cors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const params = req.query.params || [];
+  const params = getRouteParams(req);
   const id = params[0];
 
   if (!id && req.method === 'GET') {
@@ -38,7 +40,7 @@ export default async function handler(req, res) {
 
   if (!id && req.method === 'POST') {
     if (!await checkRole(req, res, ['administrator', 'organizer'])) return;
-    const { tcategory_id, torder_id, seat_id } = req.body;
+    const { tcategory_id, torder_id, seat_id } = getJsonBody(req);
     try {
       const ticket_code = `TKT-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
       const { rows } = await pool.query(
@@ -73,7 +75,7 @@ export default async function handler(req, res) {
 
   if (id && params.length === 1 && req.method === 'PUT') {
     if (!await checkRole(req, res, ['administrator', 'organizer'])) return;
-    const { seat_id } = req.body;
+    const { seat_id } = getJsonBody(req);
     try {
       if (seat_id !== undefined) {
         await pool.query(`DELETE FROM has_relationship WHERE ticket_id = $1`, [id]);
@@ -100,5 +102,5 @@ export default async function handler(req, res) {
     }
   }
 
-  return res.status(405).end();
+  return res.status(405).json({ message: 'Method not allowed.' });
 }

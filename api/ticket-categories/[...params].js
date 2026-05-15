@@ -1,11 +1,13 @@
 import pool from '../../lib/db.js';
 import { cors, checkRole } from '../../lib/auth.js';
+import { getJsonBody } from '../../lib/parseBody.js';
+import { getRouteParams } from '../../lib/routeParams.js';
 
 export default async function handler(req, res) {
   cors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const params = req.query.params || [];
+  const params = getRouteParams(req);
   const id = params[0];
 
   if (!id && req.method === 'GET') {
@@ -32,7 +34,7 @@ export default async function handler(req, res) {
 
   if (!id && req.method === 'POST') {
     if (!await checkRole(req, res, ['administrator', 'organizer'])) return;
-    const { tevent_id, category_name, price, quota } = req.body;
+    const { tevent_id, category_name, price, quota } = getJsonBody(req);
     try {
       const { rows } = await pool.query(
         `INSERT INTO ticket_category (category_id, tevent_id, category_name, price, quota)
@@ -60,7 +62,7 @@ export default async function handler(req, res) {
 
   if (id && params.length === 1 && req.method === 'PUT') {
     if (!await checkRole(req, res, ['administrator', 'organizer'])) return;
-    const { category_name, price, quota } = req.body;
+    const { category_name, price, quota } = getJsonBody(req);
     try {
       const { rows } = await pool.query(
         `UPDATE ticket_category SET category_name=$1, price=$2, quota=$3 WHERE category_id=$4 RETURNING *`,
@@ -82,5 +84,5 @@ export default async function handler(req, res) {
     }
   }
 
-  return res.status(405).end();
+  return res.status(405).json({ message: 'Method not allowed.' });
 }

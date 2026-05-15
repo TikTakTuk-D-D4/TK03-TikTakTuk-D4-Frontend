@@ -1,15 +1,17 @@
 import pool from '../../lib/db.js';
 import { cors } from '../../lib/auth.js';
+import { getJsonBody } from '../../lib/parseBody.js';
+import { getRouteParams } from '../../lib/routeParams.js';
 
 export default async function handler(req, res) {
   cors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const params = req.query.params || [];
+  const params = getRouteParams(req);
   const [first, second] = params;
 
   if (first === 'login' && req.method === 'POST') {
-    const { username, password } = req.body;
+    const { username, password } = getJsonBody(req);
     try {
       const { rows } = await pool.query(
         `SELECT ua.user_id, ua.username, r.role_name AS role
@@ -50,7 +52,7 @@ export default async function handler(req, res) {
   }
 
   if (first === 'register' && req.method === 'POST') {
-    const { username, password, role, full_name, phone_number, organizer_name, contact_email } = req.body;
+    const { username, password, role, full_name, phone_number, organizer_name, contact_email } = getJsonBody(req);
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -108,7 +110,7 @@ export default async function handler(req, res) {
 
   if (first === 'profile' && second && params.length === 2 && req.method === 'PUT') {
     const user_id = second;
-    const { full_name, phone_number, organizer_name, contact_email } = req.body;
+    const { full_name, phone_number, organizer_name, contact_email } = getJsonBody(req);
     try {
       await pool.query(
         `UPDATE customer SET full_name = $1, phone_number = $2 WHERE user_id = $3`,
@@ -124,5 +126,5 @@ export default async function handler(req, res) {
     }
   }
 
-  return res.status(405).end();
+  return res.status(405).json({ message: 'Method not allowed.' });
 }

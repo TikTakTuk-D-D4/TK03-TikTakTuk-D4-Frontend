@@ -1,11 +1,13 @@
 import pool from '../../lib/db.js';
 import { cors, checkRole } from '../../lib/auth.js';
+import { getJsonBody } from '../../lib/parseBody.js';
+import { getRouteParams } from '../../lib/routeParams.js';
 
 export default async function handler(req, res) {
   cors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const params = req.query.params || [];
+  const params = getRouteParams(req);
   const [first, second] = params;
 
   if (!first && req.method === 'GET') {
@@ -15,7 +17,7 @@ export default async function handler(req, res) {
 
   if (!first && req.method === 'POST') {
     if (!await checkRole(req, res, ['administrator'])) return;
-    const { promo_code, discount_type, discount_value, usage_limit, start_date, end_date } = req.body;
+    const { promo_code, discount_type, discount_value, usage_limit, start_date, end_date } = getJsonBody(req);
     try {
       const { rows } = await pool.query(
         `INSERT INTO promotion (promotion_id, promo_code, discount_type, discount_value, usage_limit, start_date, end_date)
@@ -45,7 +47,7 @@ export default async function handler(req, res) {
 
   if (first && params.length === 1 && req.method === 'PUT') {
     if (!await checkRole(req, res, ['administrator'])) return;
-    const { promo_code, discount_type, discount_value, usage_limit, start_date, end_date } = req.body;
+    const { promo_code, discount_type, discount_value, usage_limit, start_date, end_date } = getJsonBody(req);
     try {
       const { rows } = await pool.query(
         `UPDATE promotion SET promo_code=$1, discount_type=$2, discount_value=$3, usage_limit=$4, start_date=$5, end_date=$6 WHERE promotion_id=$7 RETURNING *`,
@@ -67,5 +69,5 @@ export default async function handler(req, res) {
     }
   }
 
-  return res.status(405).end();
+  return res.status(405).json({ message: 'Method not allowed.' });
 }

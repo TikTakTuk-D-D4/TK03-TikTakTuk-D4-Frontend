@@ -1,6 +1,16 @@
 const API_URL = import.meta.env.VITE_API_URL;
 const STORAGE_KEY = "tiktaktuk_user";
 
+export async function parseJsonSafe(res) {
+  const text = await res.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text };
+  }
+}
+
 function getAuthHeaders() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);

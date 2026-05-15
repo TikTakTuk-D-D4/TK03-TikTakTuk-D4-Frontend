@@ -1,15 +1,17 @@
 import pool from '../../lib/db.js';
 import { cors, checkRole } from '../../lib/auth.js';
+import { getJsonBody } from '../../lib/parseBody.js';
+import { getRouteParams } from '../../lib/routeParams.js';
 
 export default async function handler(req, res) {
   cors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const params = req.query.params || [];
+  const params = getRouteParams(req);
 
   if (req.method === 'POST' && params.length === 0) {
     if (!await checkRole(req, res, ['administrator', 'organizer'])) return;
-    const { event_id, artist_id, role } = req.body;
+    const { event_id, artist_id, role } = getJsonBody(req);
     try {
       const { rows } = await pool.query(
         `INSERT INTO event_artist (event_id, artist_id, role) VALUES ($1, $2, $3) RETURNING *`,
@@ -54,5 +56,5 @@ export default async function handler(req, res) {
     }
   }
 
-  return res.status(405).end();
+  return res.status(405).json({ message: 'Method not allowed.' });
 }

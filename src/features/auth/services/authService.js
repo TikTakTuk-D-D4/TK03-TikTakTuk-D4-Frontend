@@ -1,3 +1,5 @@
+import { parseJsonSafe } from "../../../lib/api";
+
 const API_URL = import.meta.env.VITE_API_URL;
 const STORAGE_KEY = "tiktaktuk_user";
 
@@ -7,7 +9,7 @@ export async function loginWithCredentials({ username = "", password = "" } = {}
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
   });
-  const data = await res.json();
+  const data = await parseJsonSafe(res);
   if (!res.ok) throw new Error(data.message || "Username atau password salah.");
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data.user));
   window.dispatchEvent(new CustomEvent("tiktaktuk:user", { detail: data.user }));
@@ -28,7 +30,7 @@ export async function registerUser({
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password, role, full_name, phone_number, organizer_name, contact_email }),
   });
-  const data = await res.json();
+  const data = await parseJsonSafe(res);
   if (!res.ok) throw new Error(data.message || "Registrasi gagal.");
   return data;
 }
@@ -45,7 +47,7 @@ export async function updateProfile({
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ full_name, phone_number, organizer_name, contact_email }),
   });
-  const data = await res.json();
+  const data = await parseJsonSafe(res);
   if (!res.ok) throw new Error(data.message || "Update profil gagal.");
   const current = getCurrentUser();
   const updated = { ...current, full_name };
