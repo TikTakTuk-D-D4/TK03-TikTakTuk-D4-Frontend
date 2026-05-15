@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   cors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const params = getRouteParams(req);
+  const params = getRouteParams(req, '/api/orders');
   const id = params[0];
 
   if (!id && req.method === 'GET') {
@@ -98,5 +98,11 @@ export default async function handler(req, res) {
     }
   }
 
-  return res.status(405).json({ message: 'Method not allowed.' });
+  return res.status(405).json({
+    message: 'Method not allowed.',
+    method: req.method,
+    params,
+    query: req.query,
+    url: req.url,
+  });
 }
