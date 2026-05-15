@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { Card, CardContent } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
@@ -90,6 +91,7 @@ function ErrorState({ message, onRetry }) {
 
 export default function OrderPage() {
   const { user } = useAuth();
+  const location = useLocation();
   const role = normalizeRole(user?.role);
   const copy = getPageCopy(role);
 
@@ -111,6 +113,12 @@ export default function OrderPage() {
     return () => window.clearTimeout(timeoutId);
   }, [flashMessage]);
 
+  useEffect(() => {
+    if (location.state?.flashMessage) {
+      setFlashMessage(location.state.flashMessage);
+    }
+  }, [location.state]);
+
   async function loadOrders() {
     setLoading(true);
     setError("");
@@ -126,7 +134,7 @@ export default function OrderPage() {
 
   useEffect(() => {
     loadOrders();
-  }, [user?.user_id, user?.role, user?.customer_id, user?.organizer_id]);
+  }, [user?.user_id, user?.role, user?.customer_id, user?.organizer_id, location.key]);
 
   const visibleOrders = useMemo(() => {
     return orders

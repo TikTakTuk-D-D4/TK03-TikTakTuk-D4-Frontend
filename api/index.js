@@ -476,6 +476,27 @@ async function handleTicketCategories(req, res, params) {
 
 // ─── ORDERS ───────────────────────────────────────────────────────────────────
 
+async function getOrderRowById(db, id) {
+  const { rows } = await db.query(
+    `SELECT o.*, c.full_name AS customer_name,
+            COALESCE(COUNT(DISTINCT t.ticket_id), 0) AS ticket_count,
+            COALESCE(string_agg(DISTINCT e.event_title, ', ') FILTER (WHERE e.event_title IS NOT NULL), '-') AS event_title,
+            COALESCE(json_agg(DISTINCT jsonb_build_object('promotion_id', p.promotion_id, 'promo_code', p.promo_code)) FILTER (WHERE p.promotion_id IS NOT NULL), '[]') AS promotions
+     FROM orders o
+     LEFT JOIN customer c ON o.customer_id = c.customer_id
+     LEFT JOIN order_promotion op ON o.order_id = op.order_id
+     LEFT JOIN promotion p ON op.promotion_id = p.promotion_id
+     LEFT JOIN ticket t ON t.torder_id = o.order_id
+     LEFT JOIN ticket_category tc ON t.tcategory_id = tc.category_id
+     LEFT JOIN event e ON tc.tevent_id = e.event_id
+     WHERE o.order_id = $1
+     GROUP BY o.order_id, c.full_name`,
+    [id]
+  );
+
+  return rows[0] || null;
+}
+
 async function handleOrders(req, res, params) {
   const id = params[0];
 
@@ -511,24 +532,112 @@ async function handleOrders(req, res, params) {
 
   if (!id && req.method === 'POST') {
     if (!await checkAuth(req, res)) return;
-    const { customer_id, total_amount, payment_status, promotion_id } = getJsonBody(req);
+    const {
+      customer_id,
+      total_amount,
+      payment_status,
+      promotion_id,
+      event_id,
+      category_id,
+      quantity,
+      seat_ids,
+      promo_code,
+    } = getJsonBody(req);
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
+
+      let resolvedPromotionId = promotion_id || null;
+      let computedTotalAmount = total_amount;
+      const safeQuantity = Math.max(Number(quantity) || 1, 1);
+
+      if (category_id) {
+        const categoryQuery = event_id
+          ? `SELECT category_id, tevent_id, price FROM ticket_category WHERE category_id = $1 AND tevent_id = $2`
+          : `SELECT category_id, tevent_id, price FROM ticket_category WHERE category_id = $1`;
+        const categoryParams = event_id ? [category_id, event_id] : [category_id];
+        const { rows: categoryRows } = await client.query(categoryQuery, categoryParams);
+        if (categoryRows.length === 0) {
+          throw new Error('Kategori tiket tidak ditemukan untuk event ini.');
+        }
+
+        const category = categoryRows[0];
+        let finalTotal = Number(category.price) * safeQuantity;
+
+        if (promo_code) {
+          const { rows: promoRows } = await client.query(
+            `SELECT * FROM promotion WHERE UPPER(promo_code) = UPPER($1) LIMIT 1`,
+            [promo_code]
+          );
+
+          if (promoRows.length === 0) {
+            throw new Error('Kode promo tidak ditemukan.');
+          }
+
+          const promo = promoRows[0];
+          const now = new Date();
+          const startDate = promo.start_date ? new Date(promo.start_date) : null;
+          const endDate = promo.end_date ? new Date(promo.end_date) : null;
+
+          if (startDate && now < startDate) {
+            throw new Error('Promo belum dapat digunakan.');
+          }
+
+          if (endDate && now > endDate) {
+            throw new Error('Promo sudah berakhir.');
+          }
+
+          if (String(promo.discount_type).toUpperCase() === 'PERCENTAGE') {
+            finalTotal -= finalTotal * (Number(promo.discount_value) / 100);
+          } else {
+            finalTotal -= Number(promo.discount_value);
+          }
+
+          finalTotal = Math.max(finalTotal, 0);
+          resolvedPromotionId = promo.promotion_id;
+        }
+
+        computedTotalAmount = finalTotal;
+      }
+
       const { rows } = await client.query(
         `INSERT INTO orders (order_id, customer_id, order_date, total_amount, payment_status)
          VALUES (gen_random_uuid(), $1, NOW(), $2, $3) RETURNING *`,
-        [customer_id, total_amount, payment_status || 'Pending']
+        [customer_id, computedTotalAmount, payment_status || 'Pending']
       );
       const order = rows[0];
-      if (promotion_id) {
+
+      if (resolvedPromotionId) {
         await client.query(
           `INSERT INTO order_promotion (order_promotion_id, promotion_id, order_id) VALUES (gen_random_uuid(), $1, $2)`,
-          [promotion_id, order.order_id]
+          [resolvedPromotionId, order.order_id]
         );
       }
+
+      if (category_id) {
+        const seatIds = Array.isArray(seat_ids) ? seat_ids : [];
+
+        for (let index = 0; index < safeQuantity; index += 1) {
+          const ticketCode = `TKT-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+          const { rows: ticketRows } = await client.query(
+            `INSERT INTO ticket (ticket_id, ticket_code, tcategory_id, torder_id)
+             VALUES (gen_random_uuid(), $1, $2, $3) RETURNING ticket_id`,
+            [ticketCode, category_id, order.order_id]
+          );
+
+          const seatId = seatIds[index];
+          if (seatId) {
+            await client.query(
+              `INSERT INTO has_relationship (seat_id, ticket_id) VALUES ($1, $2)`,
+              [seatId, ticketRows[0].ticket_id]
+            );
+          }
+        }
+      }
+
       await client.query('COMMIT');
-      return res.status(200).json(order);
+      const enrichedOrder = await getOrderRowById(client, order.order_id);
+      return res.status(200).json(enrichedOrder || order);
     } catch (err) {
       await client.query('ROLLBACK');
       return res.status(400).json({ message: `ERROR: ${err.message}` });
@@ -538,24 +647,9 @@ async function handleOrders(req, res, params) {
   }
 
   if (id && params.length === 1 && req.method === 'GET') {
-    const { rows } = await pool.query(
-      `SELECT o.*, c.full_name AS customer_name,
-              COALESCE(COUNT(DISTINCT t.ticket_id), 0) AS ticket_count,
-              COALESCE(string_agg(DISTINCT e.event_title, ', ') FILTER (WHERE e.event_title IS NOT NULL), '-') AS event_title,
-              COALESCE(json_agg(DISTINCT jsonb_build_object('promotion_id', p.promotion_id, 'promo_code', p.promo_code)) FILTER (WHERE p.promotion_id IS NOT NULL), '[]') AS promotions
-       FROM orders o
-       LEFT JOIN customer c ON o.customer_id = c.customer_id
-       LEFT JOIN order_promotion op ON o.order_id = op.order_id
-       LEFT JOIN promotion p ON op.promotion_id = p.promotion_id
-       LEFT JOIN ticket t ON t.torder_id = o.order_id
-       LEFT JOIN ticket_category tc ON t.tcategory_id = tc.category_id
-       LEFT JOIN event e ON tc.tevent_id = e.event_id
-       WHERE o.order_id = $1
-       GROUP BY o.order_id, c.full_name`,
-      [id]
-    );
-    if (rows.length === 0) return res.status(404).json({ message: 'Order tidak ditemukan.' });
-    return res.status(200).json(rows[0]);
+    const order = await getOrderRowById(pool, id);
+    if (!order) return res.status(404).json({ message: 'Order tidak ditemukan.' });
+    return res.status(200).json(order);
   }
 
   if (id && params.length === 1 && req.method === 'PUT') {

@@ -57,7 +57,7 @@ const mapOrder = (o) => ({
   customerName: o.customer_name || "-",
   eventTitle: o.event_title || o.eventTitle || "-",
   itemCount: Number(o.ticket_count) || 1,
-  customer_id: o.customer_id,
+  customer_id: o.customer_id || o.customerId,
   promotions: o.promotions || o.promo_codes || [],
 });
 
@@ -96,6 +96,8 @@ export async function createOrder(payload, user = {}) {
       quantity: payload.quantity,
       seat_ids: payload.seat_ids || [],
       promo_code: payload.promo_code || undefined,
+      total_amount: payload.total_amount,
+      payment_status: payload.payment_status,
     }),
   });
   const payloadResult = await parseJsonSafe(res);
