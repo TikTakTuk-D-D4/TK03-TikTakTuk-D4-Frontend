@@ -88,7 +88,7 @@ function DashboardPage() {
       getVenues().then(setVenues).catch(() => {}),
       getArtists().then(setArtists).catch(() => {}),
       getPromotions().then(setPromotions).catch(() => {}),
-      (isCustomer ? getOrders(customerId) : getOrders()).then(setOrders).catch(() => {}),
+      getOrders(user).then(setOrders).catch(() => {}),
       (isCustomer ? getTickets({ customer_id: customerId }) : getTickets()).then(setTickets).catch(() => {}),
       isCustomer ? getTicketCategories().then(setTicketCategories).catch(() => {}) : Promise.resolve(),
     ]).finally(() => setLoading(false));

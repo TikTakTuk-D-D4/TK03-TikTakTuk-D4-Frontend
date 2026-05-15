@@ -17,25 +17,13 @@ function formatDateTime(value) {
   }).format(new Date(value));
 }
 
-function getInitials(name = "") {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}
-
 export default function OrderTable({
   orders = [],
-  role = "CUSTOMER",
   isAdmin = false,
   onEdit,
   onDelete,
   emptyMessage = "Belum ada data order.",
 }) {
-  const showCustomerColumn = role !== "CUSTOMER";
-
   if (!orders.length) {
     return (
       <div className="rounded-[16px] border border-dashed border-line-soft bg-surface p-8 text-center text-muted shadow-soft">
@@ -51,11 +39,6 @@ export default function OrderTable({
           <thead>
             <tr className="border-b border-line-soft text-left text-[11px] uppercase tracking-[0.4px] text-muted">
               <th className="px-4 py-3 font-medium">Order ID</th>
-
-              {showCustomerColumn && (
-                <th className="px-4 py-3 font-medium">Pelanggan</th>
-              )}
-
               <th className="px-4 py-3 font-medium">Tanggal</th>
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 text-right font-medium">Total</th>
@@ -79,19 +62,6 @@ export default function OrderTable({
                   <td className="px-4 py-4 font-mono text-xs text-accent">
                     {order.id}
                   </td>
-
-                  {showCustomerColumn && (
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-[10px] bg-primary/20 text-[10px] font-semibold text-accent">
-                          {getInitials(order.customerName)}
-                        </div>
-                        <span className="text-sm text-text">
-                          {order.customerName || "-"}
-                        </span>
-                      </div>
-                    </td>
-                  )}
 
                   <td className="px-4 py-4 text-muted">
                     {formatDateTime(order.orderDate)}

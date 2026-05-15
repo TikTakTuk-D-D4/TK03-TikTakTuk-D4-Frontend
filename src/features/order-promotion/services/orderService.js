@@ -16,14 +16,33 @@ function unwrapApiData(payload) {
   return payload;
 }
 
+function normalizeScopeUser(user = {}) {
+  if (user && typeof user === "object" && !Array.isArray(user)) {
+    return user;
+  }
+
+  if (typeof user === "string") {
+    return { role: "customer", customer_id: user };
+  }
+
+  return {};
+}
+
+function normalizeRole(role) {
+  const normalized = String(role || "CUSTOMER").toUpperCase();
+  if (normalized === "ADMINISTRATOR") return "ADMIN";
+  return normalized;
+}
+
 function buildScopeParams(user = {}) {
-  const role = String(user?.role || "CUSTOMER").toUpperCase();
+  const scopeUser = normalizeScopeUser(user);
+  const role = normalizeRole(scopeUser?.role);
   const params = new URLSearchParams();
 
   params.set("role", role);
-  if (user?.user_id) params.set("userId", user.user_id);
-  if (user?.customer_id) params.set("customer_id", user.customer_id);
-  if (user?.organizer_id) params.set("organizerId", user.organizer_id);
+  if (scopeUser?.user_id) params.set("userId", scopeUser.user_id);
+  if (scopeUser?.customer_id) params.set("customer_id", scopeUser.customer_id);
+  if (scopeUser?.organizer_id) params.set("organizerId", scopeUser.organizer_id);
 
   return params;
 }
@@ -62,15 +81,16 @@ export async function getOrders(user = {}) {
 }
 
 export async function createOrder(payload, user = {}) {
+  const scopeUser = normalizeScopeUser(user);
   const res = await apiFetch("/orders", {
     method: "POST",
     body: JSON.stringify({
-      role: String(user?.role || "CUSTOMER").toUpperCase(),
-      userId: user?.user_id || undefined,
-      organizerId: user?.organizer_id || undefined,
-      customerId: user?.customer_id || undefined,
-      user_id: user?.user_id || undefined,
-      customer_id: payload.customer_id || user?.customer_id || undefined,
+      role: normalizeRole(scopeUser?.role),
+      userId: scopeUser?.user_id || undefined,
+      organizerId: scopeUser?.organizer_id || undefined,
+      customerId: scopeUser?.customer_id || undefined,
+      user_id: scopeUser?.user_id || undefined,
+      customer_id: payload.customer_id || scopeUser?.customer_id || undefined,
       event_id: payload.event_id,
       category_id: payload.category_id,
       quantity: payload.quantity,
@@ -85,13 +105,15 @@ export async function createOrder(payload, user = {}) {
 }
 
 export async function updateOrder(id, payload, user = {}) {
+  const scopeUser = normalizeScopeUser(user);
   const res = await apiFetch(`/orders/${id}`, {
     method: "PUT",
     body: JSON.stringify({
-      role: String(user?.role || "CUSTOMER").toUpperCase(),
-      userId: user?.user_id || undefined,
-      customerId: user?.customer_id || undefined,
-      organizerId: user?.organizer_id || undefined,
+      role: normalizeRole(scopeUser?.role),
+      userId: scopeUser?.user_id || undefined,
+      customerId: scopeUser?.customer_id || undefined,
+      organizerId: scopeUser?.organizer_id || undefined,
+      total_amount: payload.totalAmount,
       payment_status: normalizeStatus(payload.paymentStatus || payload.payment_status),
     }),
   });

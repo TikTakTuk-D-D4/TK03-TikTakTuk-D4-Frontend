@@ -11,19 +11,29 @@ export default async function handler(req, res) {
   const id = params[0];
 
   if (!id && req.method === 'GET') {
-    const { customer_id } = req.query;
+    const role = String(req.query.role || '').toUpperCase();
+    const customerId = req.query.customer_id || req.query.customerId;
+    const organizerId = req.query.organizer_id || req.query.organizerId;
     let sql = `
       SELECT o.*, c.full_name AS customer_name,
+             COALESCE(COUNT(DISTINCT t.ticket_id), 0) AS ticket_count,
+             COALESCE(string_agg(DISTINCT e.event_title, ', ') FILTER (WHERE e.event_title IS NOT NULL), '-') AS event_title,
              COALESCE(json_agg(DISTINCT jsonb_build_object('promotion_id', p.promotion_id, 'promo_code', p.promo_code)) FILTER (WHERE p.promotion_id IS NOT NULL), '[]') AS promotions
       FROM orders o
       LEFT JOIN customer c ON o.customer_id = c.customer_id
       LEFT JOIN order_promotion op ON o.order_id = op.order_id
       LEFT JOIN promotion p ON op.promotion_id = p.promotion_id
+      LEFT JOIN ticket t ON t.torder_id = o.order_id
+      LEFT JOIN ticket_category tc ON t.tcategory_id = tc.category_id
+      LEFT JOIN event e ON tc.tevent_id = e.event_id
     `;
     const queryParams = [];
-    if (customer_id) {
+    if (customerId || role === 'CUSTOMER') {
       sql += ` WHERE o.customer_id = $1`;
-      queryParams.push(customer_id);
+      queryParams.push(customerId);
+    } else if (organizerId || role === 'ORGANIZER') {
+      sql += ` WHERE e.organizer_id = $1`;
+      queryParams.push(organizerId);
     }
     sql += ` GROUP BY o.order_id, c.full_name ORDER BY o.order_date DESC`;
     const { rows } = await pool.query(sql, queryParams);
@@ -61,11 +71,16 @@ export default async function handler(req, res) {
   if (id && params.length === 1 && req.method === 'GET') {
     const { rows } = await pool.query(
       `SELECT o.*, c.full_name AS customer_name,
+              COALESCE(COUNT(DISTINCT t.ticket_id), 0) AS ticket_count,
+              COALESCE(string_agg(DISTINCT e.event_title, ', ') FILTER (WHERE e.event_title IS NOT NULL), '-') AS event_title,
               COALESCE(json_agg(DISTINCT jsonb_build_object('promotion_id', p.promotion_id, 'promo_code', p.promo_code)) FILTER (WHERE p.promotion_id IS NOT NULL), '[]') AS promotions
        FROM orders o
        LEFT JOIN customer c ON o.customer_id = c.customer_id
        LEFT JOIN order_promotion op ON o.order_id = op.order_id
        LEFT JOIN promotion p ON op.promotion_id = p.promotion_id
+       LEFT JOIN ticket t ON t.torder_id = o.order_id
+       LEFT JOIN ticket_category tc ON t.tcategory_id = tc.category_id
+       LEFT JOIN event e ON tc.tevent_id = e.event_id
        WHERE o.order_id = $1
        GROUP BY o.order_id, c.full_name`,
       [id]
@@ -79,7 +94,11 @@ export default async function handler(req, res) {
     const { total_amount, payment_status } = getJsonBody(req);
     try {
       const { rows } = await pool.query(
-        `UPDATE orders SET total_amount=$1, payment_status=$2 WHERE order_id=$3 RETURNING *`,
+        `UPDATE orders
+         SET total_amount = COALESCE($1, total_amount),
+             payment_status = COALESCE($2, payment_status)
+         WHERE order_id=$3
+         RETURNING *`,
         [total_amount, payment_status, id]
       );
       return res.status(200).json(rows[0]);
