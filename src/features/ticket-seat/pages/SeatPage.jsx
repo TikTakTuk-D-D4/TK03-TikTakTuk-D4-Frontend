@@ -41,7 +41,7 @@ function SeatPage() {
   const [toasts, setToasts] = useState([]);
   const toastCounterRef = useRef(0);
 
-  const canManage = user?.role === "admin" || user?.role === "organizer";
+  const canManage = user?.role === "administrator" || user?.role === "organizer";
 
   useEffect(() => {
     Promise.all([getSeats(), getVenues()])

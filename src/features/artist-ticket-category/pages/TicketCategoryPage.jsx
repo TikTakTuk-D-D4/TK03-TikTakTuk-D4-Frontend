@@ -20,7 +20,7 @@ function TicketCategoryPage() {
   const { toast } = useToast();
 
   const role = user?.role ?? "guest";
-  const showActions = role === "admin" || role === "organizer";
+  const showActions = role === "administrator" || role === "organizer";
 
   const [categories, setCategories] = useState([]);
   const [events, setEvents] = useState([]);
@@ -86,7 +86,7 @@ function TicketCategoryPage() {
   );
 
   const canManageRow = (category) => {
-    if (role === "admin") return true;
+    if (role === "administrator") return true;
     if (role === "organizer") return category.organizerId === user?.id;
     return false;
   };

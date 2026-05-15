@@ -69,8 +69,8 @@ function TicketPage() {
   const [toasts, setToasts] = useState([]);
   const toastCounterRef = useRef(0);
 
-  const isManagementView = user?.role === "admin" || user?.role === "organizer";
-  const adminCanMutate = user?.role === "admin";
+  const isManagementView = user?.role === "administrator" || user?.role === "organizer";
+  const adminCanMutate = user?.role === "administrator";
 
   const isManagementPath = location.pathname === "/manage-tickets";
   const accessDenied = isManagementPath && !isManagementView;

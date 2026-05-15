@@ -67,7 +67,7 @@ function DashboardPage() {
   const [ticketCategories, setTicketCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const isAdmin = user?.role === "admin";
+  const isAdmin = user?.role === "administrator";
   const isOrganizer = user?.role === "organizer";
   const isCustomer = user?.role === "customer";
   const organizerId = user?.organizer_id || user?.organizerId;

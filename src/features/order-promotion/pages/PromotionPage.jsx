@@ -21,7 +21,7 @@ import {
 function PromotionPage() {
   const { user } = useAuth();
   const currentRole = String(user?.role || "guest").toUpperCase();
-  const isAdmin = currentRole === "ADMIN";
+  const isAdmin = currentRole === "ADMINISTRATOR";
 
   const [promotions, setPromotions] = useState([]);
   const [loading, setLoading] = useState(true);

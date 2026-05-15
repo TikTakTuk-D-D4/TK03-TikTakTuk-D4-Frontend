@@ -38,7 +38,7 @@ function ArtistPage() {
   );
 
   const refresh = () => getArtists().then(setArtists);
-  const canManage = role === "admin";
+  const canManage = role === "administrator";
 
   const openCreateForm = () => {
     setEditingArtist(null);

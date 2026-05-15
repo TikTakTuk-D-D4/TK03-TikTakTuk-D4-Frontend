@@ -47,7 +47,7 @@ function EventPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const canManage = user?.role === "admin" || user?.role === "organizer";
+  const canManage = user?.role === "administrator" || user?.role === "organizer";
 
   const selectedCategory = useMemo(
     () => ticketCategories.find((category) => category.id === selectedCategoryId) || null,

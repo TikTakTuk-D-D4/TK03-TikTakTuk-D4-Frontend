@@ -11,7 +11,7 @@ function getDisplayName(user) {
 }
 
 function getRoleLabel(role) {
-  if (role === "admin") return "Administrator";
+  if (role === "administrator") return "Administrator";
   if (role === "organizer") return "Organizer";
   return "Pelanggan";
 }
