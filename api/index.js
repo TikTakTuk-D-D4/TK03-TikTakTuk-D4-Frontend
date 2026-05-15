@@ -2,13 +2,33 @@ import pool from '../lib/db.js';
 import { cors, checkRole, checkAuth, getRoleFromUserId } from '../lib/auth.js';
 import { getJsonBody } from '../lib/parseBody.js';
 
+function getApiSegments(req) {
+  const raw = req.query?.path;
+
+  if (!raw) return [];
+
+  if (Array.isArray(raw)) {
+    return raw.flatMap((part) => String(part).split('/')).filter(Boolean);
+  }
+
+  return String(raw).split('/').filter(Boolean);
+}
+
 export default async function handler(req, res) {
   cors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const pathArr = req.query.path;
-  const segments = Array.isArray(pathArr) ? pathArr : pathArr ? [pathArr] : [];
+  const segments = getApiSegments(req);
   const [resource, ...rest] = segments;
+
+  if (resource === 'health') {
+    return res.status(200).json({
+      ok: true,
+      segments,
+      query: req.query,
+      method: req.method,
+    });
+  }
 
   if (resource === 'venues') return handleVenues(req, res, rest);
   if (resource === 'events') return handleEvents(req, res, rest);
