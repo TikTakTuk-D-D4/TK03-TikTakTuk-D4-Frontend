@@ -1,6 +1,4 @@
-import { parseJsonSafe } from "../../../lib/api";
-
-const API_URL = import.meta.env.VITE_API_URL;
+import { API_URL, parseJsonSafe } from "../../../lib/api";
 const STORAGE_KEY = "tiktaktuk_user";
 
 export async function loginWithCredentials({ username = "", password = "" } = {}) {

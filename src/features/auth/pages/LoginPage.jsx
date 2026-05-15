@@ -39,11 +39,6 @@ function LoginPage() {
       setError("Username dan password wajib diisi.");
       return;
     }
-    const expected = DEMO_ACCOUNTS[role];
-    if (username.trim() !== expected.username) {
-      setError(`Username tidak sesuai dengan role "${role}". Gunakan username: ${expected.username}`);
-      return;
-    }
     setLoading(true);
     try {
       await login({ username: username.trim(), password });
