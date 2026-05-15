@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL || "/api";
 const STORAGE_KEY = "tiktaktuk_user";
 
 export async function parseJsonSafe(res) {
@@ -7,7 +7,12 @@ export async function parseJsonSafe(res) {
   try {
     return JSON.parse(text);
   } catch {
-    return { message: text };
+    return {
+      message: text.startsWith("<")
+        ? "Server returned HTML instead of JSON. Check VITE_API_URL and API route path."
+        : text,
+      raw: text,
+    };
   }
 }
 

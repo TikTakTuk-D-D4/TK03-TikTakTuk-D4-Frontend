@@ -1,4 +1,4 @@
-import { apiFetch, API_URL } from "../../../lib/api";
+import { apiFetch, parseJsonSafe } from "../../../lib/api";
 
 const toDbStatus = { PENDING: "Pending", PAID: "Paid", CANCELLED: "Cancelled" };
 const normalizeStatus = (s) => toDbStatus[s?.toUpperCase()] || s;
@@ -22,7 +22,7 @@ function buildScopeParams(user = {}) {
 
   params.set("role", role);
   if (user?.user_id) params.set("userId", user.user_id);
-  if (user?.customer_id) params.set("customerId", user.customer_id);
+  if (user?.customer_id) params.set("customer_id", user.customer_id);
   if (user?.organizer_id) params.set("organizerId", user.organizer_id);
 
   return params;
@@ -44,9 +44,8 @@ const mapOrder = (o) => ({
 
 export async function getOrders(user = {}) {
   const params = buildScopeParams(user);
-  const url = `${API_URL}/orders?${params.toString()}`;
-  const res = await fetch(url);
-  const payload = await res.json();
+  const res = await apiFetch(`/orders?${params.toString()}`);
+  const payload = await parseJsonSafe(res);
 
   if (!res.ok) {
     throw new Error(payload?.message || "Gagal memuat order.");
@@ -79,7 +78,7 @@ export async function createOrder(payload, user = {}) {
       promo_code: payload.promo_code || undefined,
     }),
   });
-  const payloadResult = await res.json();
+  const payloadResult = await parseJsonSafe(res);
   if (!res.ok) throw new Error(payloadResult?.message || "Gagal membuat order.");
 
   return mapOrder(unwrapApiData(payloadResult));
@@ -87,7 +86,7 @@ export async function createOrder(payload, user = {}) {
 
 export async function updateOrder(id, payload, user = {}) {
   const res = await apiFetch(`/orders/${id}`, {
-    method: "PATCH",
+    method: "PUT",
     body: JSON.stringify({
       role: String(user?.role || "CUSTOMER").toUpperCase(),
       userId: user?.user_id || undefined,
@@ -96,7 +95,7 @@ export async function updateOrder(id, payload, user = {}) {
       payment_status: normalizeStatus(payload.paymentStatus || payload.payment_status),
     }),
   });
-  const payloadResult = await res.json();
+  const payloadResult = await parseJsonSafe(res);
   if (!res.ok) throw new Error(payloadResult?.message || "Gagal mengubah order.");
   return mapOrder(unwrapApiData(payloadResult));
 }
@@ -106,7 +105,7 @@ export async function deleteOrder(id, user = {}) {
   const res = await apiFetch(`/orders/${id}?${params.toString()}`, {
     method: "DELETE",
   });
-  const payload = await res.json();
+  const payload = await parseJsonSafe(res);
   if (!res.ok) throw new Error(payload?.message || "Gagal menghapus order.");
   return true;
 }
