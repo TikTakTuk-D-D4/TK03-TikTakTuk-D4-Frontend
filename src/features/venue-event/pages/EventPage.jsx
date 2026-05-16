@@ -154,24 +154,7 @@ function EventPage() {
 
     try {
       const promo = await getPromotionByCode(normalizedCode);
-      const now = new Date();
-      const startDate = promo.startDate ? new Date(promo.startDate) : null;
-      const endDate = promo.endDate ? new Date(promo.endDate) : null;
-      const usageLimit = Number(promo.usageLimit || 0);
-      const usedCount = Number(promo.usedCount || 0);
-
-      if (startDate && now < startDate) {
-        throw new Error("Promo belum dapat digunakan.");
-      }
-
-      if (endDate && now > endDate) {
-        throw new Error("Promo sudah berakhir.");
-      }
-
-      if (usageLimit > 0 && usedCount >= usageLimit) {
-        throw new Error("Kuota promo sudah habis.");
-      }
-
+      // Validasi periode dan usage_limit dilakukan oleh Trigger 4B saat order dibuat.
       setAppliedPromo(promo);
       setPromoCode(promo.promoCode);
       setPromoMessage({ type: "success", text: `${promo.promoCode} diterapkan.` });

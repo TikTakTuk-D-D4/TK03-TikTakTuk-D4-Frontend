@@ -2,6 +2,13 @@ import pool from '../lib/db.js';
 import { cors, checkRole, checkAuth, getRoleFromUserId } from '../lib/auth.js';
 import { getJsonBody } from '../lib/parseBody.js';
 
+// Mengembalikan pesan error tanpa double-prefix "ERROR: ".
+// Pesan dari trigger PostgreSQL sudah diawali "ERROR: ", pesan lain diberi prefix.
+function errMsg(err) {
+  const m = (err && err.message) ? err.message : String(err);
+  return m.startsWith('ERROR:') ? m : `ERROR: ${m}`;
+}
+
 function getApiSegments(req) {
   const raw = req.query?.path;
 
@@ -65,7 +72,7 @@ async function handleVenues(req, res, params) {
       );
       return res.status(200).json(rows[0]);
     } catch (err) {
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     }
   }
 
@@ -85,7 +92,7 @@ async function handleVenues(req, res, params) {
       );
       return res.status(200).json(rows[0]);
     } catch (err) {
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     }
   }
 
@@ -95,7 +102,7 @@ async function handleVenues(req, res, params) {
       await pool.query(`DELETE FROM venue WHERE venue_id = $1`, [id]);
       return res.status(200).json({ success: true });
     } catch (err) {
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     }
   }
 
@@ -125,7 +132,7 @@ async function handleEvents(req, res, params) {
       );
       return res.status(200).json(rows[0]);
     } catch (err) {
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     }
   }
 
@@ -148,7 +155,7 @@ async function handleEvents(req, res, params) {
       );
       return res.status(200).json(rows[0]);
     } catch (err) {
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     }
   }
 
@@ -158,7 +165,7 @@ async function handleEvents(req, res, params) {
       await pool.query(`DELETE FROM event WHERE event_id = $1`, [id]);
       return res.status(200).json({ success: true });
     } catch (err) {
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     }
   }
 
@@ -185,7 +192,7 @@ async function handleArtists(req, res, params) {
       );
       return res.status(200).json(rows[0]);
     } catch (err) {
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     }
   }
 
@@ -205,7 +212,7 @@ async function handleArtists(req, res, params) {
       );
       return res.status(200).json(rows[0]);
     } catch (err) {
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     }
   }
 
@@ -215,7 +222,7 @@ async function handleArtists(req, res, params) {
       await pool.query(`DELETE FROM artist WHERE artist_id = $1`, [id]);
       return res.status(200).json({ success: true });
     } catch (err) {
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     }
   }
 
@@ -305,7 +312,7 @@ async function handleAuth(req, res, params) {
       return res.status(200).json({ success: true, user: { ...user, role: role || 'customer' } });
     } catch (err) {
       await client.query('ROLLBACK');
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     } finally {
       client.release();
     }
@@ -335,7 +342,7 @@ async function handleAuth(req, res, params) {
       );
       return res.status(200).json({ success: true });
     } catch (err) {
-      return res.status(400).json({ message: err.message });
+      return res.status(400).json({ message: errMsg(err) });
     }
   }
 
@@ -355,7 +362,7 @@ async function handleEventArtists(req, res, params) {
       );
       return res.status(200).json(rows[0]);
     } catch (err) {
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     }
   }
 
@@ -365,7 +372,7 @@ async function handleEventArtists(req, res, params) {
       const { rows } = await pool.query(`SELECT * FROM get_ticket_quota($1::uuid)`, [event_id]);
       return res.status(200).json(rows);
     } catch (err) {
-      return res.status(404).json({ message: `ERROR: ${err.message}` });
+      return res.status(404).json({ message: errMsg(err) });
     }
   }
 
@@ -385,7 +392,7 @@ async function handleEventArtists(req, res, params) {
       await pool.query(`DELETE FROM event_artist WHERE event_id=$1 AND artist_id=$2`, [event_id, artist_id]);
       return res.status(200).json({ success: true });
     } catch (err) {
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     }
   }
 
@@ -430,7 +437,7 @@ async function handleTicketCategories(req, res, params) {
       );
       return res.status(200).json(rows[0]);
     } catch (err) {
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     }
   }
 
@@ -457,7 +464,7 @@ async function handleTicketCategories(req, res, params) {
       );
       return res.status(200).json(rows[0]);
     } catch (err) {
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     }
   }
 
@@ -467,7 +474,7 @@ async function handleTicketCategories(req, res, params) {
       await pool.query(`DELETE FROM ticket_category WHERE category_id = $1`, [id]);
       return res.status(200).json({ success: true });
     } catch (err) {
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     }
   }
 
@@ -599,24 +606,7 @@ async function handleOrders(req, res, params) {
             throw new Error('Kode promo tidak ditemukan.');
           }
 
-          const now = new Date();
-          const startDate = promo.start_date ? new Date(promo.start_date) : null;
-          const endDate = promo.end_date ? new Date(promo.end_date) : null;
-          const usageLimit = Number(promo.usage_limit || 0);
-          const usedCount = Number(promo.used_count || 0);
-
-          if (startDate && now < startDate) {
-            throw new Error('Promo belum dapat digunakan.');
-          }
-
-          if (endDate && now > endDate) {
-            throw new Error('Promo sudah berakhir.');
-          }
-
-          if (usageLimit > 0 && usedCount >= usageLimit) {
-            throw new Error('Kuota promo sudah habis.');
-          }
-
+          // Validasi periode dan usage_limit diserahkan ke Trigger 4B saat INSERT ke order_promotion.
           if (String(promo.discount_type).toUpperCase() === 'PERCENTAGE') {
             finalTotal -= finalTotal * (Number(promo.discount_value) / 100);
           } else {
@@ -670,7 +660,7 @@ async function handleOrders(req, res, params) {
       return res.status(200).json(enrichedOrder || order);
     } catch (err) {
       await client.query('ROLLBACK');
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     } finally {
       client.release();
     }
@@ -696,7 +686,7 @@ async function handleOrders(req, res, params) {
       );
       return res.status(200).json(rows[0]);
     } catch (err) {
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     }
   }
 
@@ -706,7 +696,7 @@ async function handleOrders(req, res, params) {
       await pool.query(`DELETE FROM orders WHERE order_id = $1`, [id]);
       return res.status(200).json({ success: true });
     } catch (err) {
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     }
   }
 
@@ -742,7 +732,7 @@ async function handlePromotions(req, res, params) {
       const promotion = await getPromotionRowById(pool, rows[0].promotion_id);
       return res.status(200).json(promotion || rows[0]);
     } catch (err) {
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     }
   }
 
@@ -769,7 +759,7 @@ async function handlePromotions(req, res, params) {
       const promotion = await getPromotionRowById(pool, rows[0].promotion_id);
       return res.status(200).json(promotion || rows[0]);
     } catch (err) {
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     }
   }
 
@@ -779,7 +769,7 @@ async function handlePromotions(req, res, params) {
       await pool.query(`DELETE FROM promotion WHERE promotion_id = $1`, [first]);
       return res.status(200).json({ success: true });
     } catch (err) {
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     }
   }
 
@@ -821,7 +811,7 @@ async function handleSeats(req, res, params) {
       );
       return res.status(200).json(rows[0]);
     } catch (err) {
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     }
   }
 
@@ -844,7 +834,7 @@ async function handleSeats(req, res, params) {
       );
       return res.status(200).json(rows[0]);
     } catch (err) {
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     }
   }
 
@@ -854,7 +844,7 @@ async function handleSeats(req, res, params) {
       await pool.query(`DELETE FROM seat WHERE seat_id = $1`, [id]);
       return res.status(200).json({ success: true });
     } catch (err) {
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     }
   }
 
@@ -910,7 +900,7 @@ async function handleTickets(req, res, params) {
       }
       return res.status(200).json(ticket);
     } catch (err) {
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     }
   }
 
@@ -943,7 +933,7 @@ async function handleTickets(req, res, params) {
       if (rows.length === 0) return res.status(404).json({ message: 'Tiket tidak ditemukan.' });
       return res.status(200).json(rows[0]);
     } catch (err) {
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     }
   }
 
@@ -954,7 +944,7 @@ async function handleTickets(req, res, params) {
       await pool.query(`DELETE FROM ticket WHERE ticket_id = $1`, [id]);
       return res.status(200).json({ success: true });
     } catch (err) {
-      return res.status(400).json({ message: `ERROR: ${err.message}` });
+      return res.status(400).json({ message: errMsg(err) });
     }
   }
 
